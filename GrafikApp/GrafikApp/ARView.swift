@@ -12,10 +12,7 @@ import ARKit
 struct ARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
-    @Binding var hasAddedObject: Bool
     @Binding var currentAnchor: AnchorEntity?
-    @Binding var isTranslationActive: Bool
-    @Binding var showExercisePopup: Bool
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -26,9 +23,6 @@ struct ARViewContainer: UIViewRepresentable {
 
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
         arView.addGestureRecognizer(tapGesture)
-
-        let panGesture = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan))
-        arView.addGestureRecognizer(panGesture)
 
         context.coordinator.arView = arView
         return arView
@@ -43,7 +37,6 @@ struct ARViewContainer: UIViewRepresentable {
     class Coordinator: NSObject {
         var parent: ARViewContainer
         weak var arView: ARView?
-        var selectedObject: ModelEntity?
 
         init(_ parent: ARViewContainer) {
             self.parent = parent
@@ -54,65 +47,33 @@ struct ARViewContainer: UIViewRepresentable {
             let location = sender.location(in: arView)
             let results = arView.raycast(from: location, allowing: .existingPlaneGeometry, alignment: .any)
 
-            if let firstResult = results.first {
-                if !parent.hasAddedAxes {
-                    let anchor = AnchorEntity(world: firstResult.worldTransform)
-                    arView.scene.addAnchor(anchor)
+            if let firstResult = results.first, !parent.hasAddedAxes {
+                let anchor = AnchorEntity(world: firstResult.worldTransform)
+                arView.scene.addAnchor(anchor)
 
-                    let axis = createAxis()
-                    axis.position.y += 0.01
-                    anchor.addChild(axis)
+                let axis = createAxis()
+                axis.position.y += 0.01
+                anchor.addChild(axis)
 
-                    let plane = createPlane()
-                    anchor.addChild(plane)
+                let plane = createPlane()
+                anchor.addChild(plane)
 
-                    parent.currentAnchor = anchor
-                    parent.hasAddedAxes = true
+                parent.currentAnchor = anchor
+                parent.hasAddedAxes = true
 
-                    showMessage("Selecione o eixo para adicionar o objeto 3D", duration: 5)
-                }
-                else if parent.hasAddedAxes && !parent.hasAddedObject {
-                    guard let anchor = parent.currentAnchor else { return }
-
-                    let cube = createCube()
-                    anchor.addChild(cube)
-
-                    parent.hasAddedObject = true
-                    selectedObject = cube
-
-                    DispatchQueue.main.async {
-                        self.parent.isTranslationActive = true
-                    }
-                }
+                showMessage("Eixos adicionados com sucesso!", duration: 4)
             } else if !parent.hasAddedAxes {
                 showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
             }
         }
 
-
-        @objc func handlePan(_ sender: UIPanGestureRecognizer) {
-            guard parent.isTranslationActive, let object = selectedObject, let arView = arView else { return }
-
-            let translation = sender.translation(in: arView)
-
-            let newPosition = SIMD3<Float>(
-                object.position.x + Float(translation.x) * 0.001,
-                object.position.y - Float(translation.y) * 0.001,
-                object.position.z
-            )
-
-            object.position = newPosition
-            sender.setTranslation(.zero, in: arView)
-        }
-
-        func showMessage(_ text: String, duration: TimeInterval, completion: (() -> Void)? = nil) {
+        func showMessage(_ text: String, duration: TimeInterval) {
             DispatchQueue.main.async {
                 self.parent.message = text
                 DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                     if text != "Selecione um plano para adicionar os eixos!" {
                         self.parent.message = nil
                     }
-                    completion?()
                 }
             }
         }
@@ -153,15 +114,6 @@ struct ARViewContainer: UIViewRepresentable {
             planeEntity.position = SIMD3(0, 0, 0)
             return planeEntity
         }
-
-        func createCube() -> ModelEntity {
-            let cubeSize: Float = 0.1
-            let cubeMesh = MeshResource.generateBox(size: cubeSize)
-            let cubeMaterial = SimpleMaterial(color: .gray, isMetallic: false)
-            let cubeEntity = ModelEntity(mesh: cubeMesh, materials: [cubeMaterial])
-            cubeEntity.position = SIMD3(0.15, 0.15, 0.15)
-            return cubeEntity
-        }
     }
 }
 
@@ -169,15 +121,16 @@ struct ARViewScreen: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var message: String? = "Selecione um plano para adicionar os eixos!"
     @State private var hasAddedAxes = false
-    @State private var hasAddedObject = false
-    @State private var isTranslationActive = false
     @State private var currentAnchor: AnchorEntity?
-    @State private var showExercisePopup = false
 
     var body: some View {
         ZStack {
-            ARViewContainer(message: $message, hasAddedAxes: $hasAddedAxes, hasAddedObject: $hasAddedObject, currentAnchor: $currentAnchor, isTranslationActive: $isTranslationActive, showExercisePopup: $showExercisePopup)
-                .edgesIgnoringSafeArea(.all)
+            ARViewContainer(
+                message: $message,
+                hasAddedAxes: $hasAddedAxes,
+                currentAnchor: $currentAnchor
+            )
+            .edgesIgnoringSafeArea(.all)
 
             if let message = message {
                 MessageOverlay(message: message)
@@ -202,46 +155,7 @@ struct ARViewScreen: View {
                 }
                 Spacer()
             }
-
-            VStack {
-                HStack {
-                    Spacer()
-                    
-                    if hasAddedObject {
-                        Button(action: {
-                            message = "Dica: Arraste com um dedo para mover o objeto"
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-                                message = nil
-                            }
-                        }) {
-                            Image(systemName: "questionmark.circle")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .padding()
-                                .background(Color.white.opacity(0.7))
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                        }
-                        
-                        Spacer().frame(width: 10)
-
-                        Button(action: {
-                            showExercisePopup.toggle()
-                        }) {
-                            Image(systemName: "play.circle")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .padding()
-                                .background(Color.white.opacity(0.7))
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                        }
-                    }
-                }
-                .padding()
-                Spacer()
-            }
-            }
-            ExercisePopup(isPresented: $showExercisePopup)
         }
     }
+}
+
