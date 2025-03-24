@@ -13,60 +13,67 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
-
+    
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
         let config = ARWorldTrackingConfiguration()
         config.planeDetection = [.horizontal, .vertical]
         config.environmentTexturing = .automatic
-        arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
-
+        config.isLightEstimationEnabled = true
+        arView.session.delegate = context.coordinator
+        arView.session.run(config)
+        //        arView.debugOptions = [ .showAnchorGeometry, .showSceneUnderstanding]
+        
+        
+        //        arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
         arView.addGestureRecognizer(tapGesture)
-
+        
         context.coordinator.arView = arView
         return arView
     }
-
+    
     func updateUIView(_ uiView: ARView, context: Context) {}
-
+    
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-
+    
     class Coordinator: NSObject {
         var parent: ARViewContainer
         weak var arView: ARView?
-
+        
         init(_ parent: ARViewContainer) {
             self.parent = parent
         }
-
+        
         @objc func handleTap(_ sender: UITapGestureRecognizer) {
             guard let arView = arView else { return }
             let location = sender.location(in: arView)
-            let results = arView.raycast(from: location, allowing: .existingPlaneGeometry, alignment: .any)
-
+            let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .any)
+            
+            
             if let firstResult = results.first, !parent.hasAddedAxes {
                 let anchor = AnchorEntity(world: firstResult.worldTransform)
                 arView.scene.addAnchor(anchor)
-
+                
                 let axis = createAxis()
                 axis.position.y += 0.01
                 anchor.addChild(axis)
-
+                
                 let plane = createPlane()
                 anchor.addChild(plane)
-
+                
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
-
+                
                 showMessage("Eixos adicionados com sucesso!", duration: 4)
             } else if !parent.hasAddedAxes {
                 showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
             }
         }
-
+        
         func showMessage(_ text: String, duration: TimeInterval) {
             DispatchQueue.main.async {
                 self.parent.message = text
@@ -77,36 +84,48 @@ struct ARViewContainer: UIViewRepresentable {
                 }
             }
         }
-
+        
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
             let xAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
             let yAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
             let zAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
-
+            
+            let redTransparent = SimpleMaterial(color: UIColor.red.withAlphaComponent(0.3), isMetallic: false)
+            let greenTransparent = SimpleMaterial(color: UIColor.green.withAlphaComponent(0.3), isMetallic: false)
+            let blueTransparent = SimpleMaterial(color: UIColor.blue.withAlphaComponent(0.3), isMetallic: false)
+            
             let xMaterial = SimpleMaterial(color: .red, isMetallic: false)
             let yMaterial = SimpleMaterial(color: .green, isMetallic: false)
             let zMaterial = SimpleMaterial(color: .blue, isMetallic: false)
-
+            
             let xModel = ModelEntity(mesh: xAxis, materials: [xMaterial])
             let yModel = ModelEntity(mesh: yAxis, materials: [yMaterial])
             let zModel = ModelEntity(mesh: zAxis, materials: [zMaterial])
-
+            
             xModel.position = SIMD3(0, 0, axisLength / 2)
+//            xModel.position = SIMD3(0, 0, axisLength / 2 + 0.005)
+            xModel.addChild(makeDashedLine(axis: [0,0,1], color: redTransparent))
+            
             yModel.position = SIMD3(axisLength / 2, 0, 0)
+//            yModel.position = SIMD3(axisLength / 2 + 0.005, 0, 0)
+            yModel.addChild(makeDashedLine(axis: [1,0,0], color: greenTransparent))
+            
             zModel.position = SIMD3(0, axisLength / 2, 0)
-
+//            zModel.position = SIMD3(0, axisLength / 2 + 0.005, 0)
+            zModel.addChild(makeDashedLine(axis: [0,1,0], color: blueTransparent))
+            
             let axisEntity = Entity()
             axisEntity.addChild(xModel)
             axisEntity.addChild(yModel)
             axisEntity.addChild(zModel)
-
+            
             let entity = ModelEntity()
             entity.addChild(axisEntity)
-
+            
             return entity
         }
-
+        
         func createPlane() -> ModelEntity {
             let planeMesh = MeshResource.generatePlane(width: 0.5, depth: 0.5)
             let planeMaterial = SimpleMaterial(color: .white.withAlphaComponent(0.5), isMetallic: false)
@@ -114,6 +133,40 @@ struct ARViewContainer: UIViewRepresentable {
             planeEntity.position = SIMD3(0, 0, 0)
             return planeEntity
         }
+        
+        func makeDashedLine(
+            axis: SIMD3<Float>,
+            color: SimpleMaterial,
+            segments: Int = 10,
+            segmentLength: Float = 0.02,
+            gap: Float = 0.01,
+            shaftRadius: Float = 0.005
+        ) -> Entity {
+            let container = Entity()
+            let initialOffset: Float = 0.15
+            
+            for i in 0..<segments {
+                let segment = ModelEntity(
+                    mesh: .generateBox(size: [shaftRadius * 2, shaftRadius * 2, segmentLength]),
+                    materials: [color]
+                )
+                
+                let offset = initialOffset + Float(i) * (segmentLength + gap) + segmentLength / 2
+                segment.position = -axis * offset
+                
+                if axis == [1,0,0] {
+                    segment.orientation = simd_quatf(angle: -.pi/2, axis: [0,1,0])
+                } else if axis == [0,1,0] {
+                    segment.orientation = simd_quatf(angle: 0, axis: [0,0,0])
+                } else if axis == [0,0,1] {
+                    segment.orientation = simd_quatf(angle: .pi/2, axis: [1,0,0])
+                }
+                
+                container.addChild(segment)
+            }
+            return container
+        }
+
     }
 }
 
@@ -122,7 +175,7 @@ struct ARViewScreen: View {
     @State private var message: String? = "Selecione um plano para adicionar os eixos!"
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
-
+    
     var body: some View {
         ZStack {
             ARViewContainer(
@@ -131,12 +184,12 @@ struct ARViewScreen: View {
                 currentAnchor: $currentAnchor
             )
             .edgesIgnoringSafeArea(.all)
-
+            
             if let message = message {
                 MessageOverlay(message: message)
                     .transition(.opacity)
             }
-
+            
             VStack {
                 HStack {
                     Button(action: {
@@ -158,4 +211,17 @@ struct ARViewScreen: View {
         }
     }
 }
+
+extension ARViewContainer.Coordinator: ARSessionDelegate {
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        for anchor in anchors {
+            if anchor is ARPlaneAnchor {
+                DispatchQueue.main.async {
+                    self.parent.message = "Plano detectado! Toque para adicionar os eixos."
+                }
+            }
+        }
+    }
+}
+
 
