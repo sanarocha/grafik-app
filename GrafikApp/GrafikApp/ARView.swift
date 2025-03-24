@@ -104,16 +104,16 @@ struct ARViewContainer: UIViewRepresentable {
             let zModel = ModelEntity(mesh: zAxis, materials: [zMaterial])
             
             xModel.position = SIMD3(0, 0, axisLength / 2)
-//            xModel.position = SIMD3(0, 0, axisLength / 2 + 0.005)
             xModel.addChild(makeDashedLine(axis: [0,0,1], color: redTransparent))
+            xModel.addChild(makeArrow(color: xMaterial, axis: [0,0,1]))
             
             yModel.position = SIMD3(axisLength / 2, 0, 0)
-//            yModel.position = SIMD3(axisLength / 2 + 0.005, 0, 0)
             yModel.addChild(makeDashedLine(axis: [1,0,0], color: greenTransparent))
+            yModel.addChild(makeArrow(color: yMaterial, axis: [1,0,0]))
             
             zModel.position = SIMD3(0, axisLength / 2, 0)
-//            zModel.position = SIMD3(0, axisLength / 2 + 0.005, 0)
             zModel.addChild(makeDashedLine(axis: [0,1,0], color: blueTransparent))
+            zModel.addChild(makeArrow(color: zMaterial, axis: [0,1,0]))
             
             let axisEntity = Entity()
             axisEntity.addChild(xModel)
@@ -124,6 +124,24 @@ struct ARViewContainer: UIViewRepresentable {
             entity.addChild(axisEntity)
             
             return entity
+        }
+        
+        func makeArrow(color: SimpleMaterial, axis: SIMD3<Float>, arrowRadius: Float = 0.01, arrowHeight: Float = 0.05, axisLength: Float = 0.3) -> Entity {
+            let arrow = ModelEntity(mesh: .generateCone(height: arrowHeight, radius: arrowRadius), materials: [color])
+
+            var direction = normalize(axis)
+            var orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+
+            if axis == [1, 0, 0] {
+                orientation = simd_quatf(angle: -.pi/2, axis: [0, 0, 1])
+            } else if axis == [0, 0, 1] {
+                orientation = simd_quatf(angle: .pi/2, axis: [1, 0, 0])
+            }
+
+            arrow.orientation = orientation
+            arrow.position = direction * (axisLength + arrowHeight / 2 - 0.15)
+
+            return arrow
         }
         
         func createPlane() -> ModelEntity {
