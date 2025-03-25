@@ -13,6 +13,7 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
+    @Binding var showPanel: Bool
     
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -22,10 +23,6 @@ struct ARViewContainer: UIViewRepresentable {
         config.isLightEstimationEnabled = true
         arView.session.delegate = context.coordinator
         arView.session.run(config)
-        //        arView.debugOptions = [ .showAnchorGeometry, .showSceneUnderstanding]
-        
-        
-        //        arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
         
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
         arView.addGestureRecognizer(tapGesture)
@@ -34,7 +31,13 @@ struct ARViewContainer: UIViewRepresentable {
         return arView
     }
     
-    func updateUIView(_ uiView: ARView, context: Context) {}
+    func updateUIView(_ uiView: ARView, context: Context) {
+        if showPanel {
+            context.coordinator.showFloatingPanel()
+        } else {
+            context.coordinator.hideFloatingPanel()
+        }
+    }
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -43,6 +46,7 @@ struct ARViewContainer: UIViewRepresentable {
     class Coordinator: NSObject {
         var parent: ARViewContainer
         weak var arView: ARView?
+        var floatingPanel: FloatingPanelEntity?
         
         init(_ parent: ARViewContainer) {
             self.parent = parent
@@ -82,6 +86,25 @@ struct ARViewContainer: UIViewRepresentable {
                         self.parent.message = nil
                     }
                 }
+            }
+        }
+        
+        func showFloatingPanel() {
+            guard let arView = arView, floatingPanel == nil else { return }
+            let panel = FloatingPanelEntity()
+            panel.position = [0, 0.1, -0.3]
+            panel.orientation = simd_quatf(angle: 0, axis: [0,1,0])
+            let anchor = AnchorEntity(world: [0, 0, -0.3])
+            anchor.addChild(panel)
+            arView.scene.anchors.append(anchor)
+            arView.scene.anchors.append(panel)
+            floatingPanel = panel
+        }
+        
+        func hideFloatingPanel() {
+            if let panel = floatingPanel {
+                panel.removeFromParent()
+                floatingPanel = nil
             }
         }
         
@@ -128,19 +151,19 @@ struct ARViewContainer: UIViewRepresentable {
         
         func makeArrow(color: SimpleMaterial, axis: SIMD3<Float>, arrowRadius: Float = 0.01, arrowHeight: Float = 0.05, axisLength: Float = 0.3) -> Entity {
             let arrow = ModelEntity(mesh: .generateCone(height: arrowHeight, radius: arrowRadius), materials: [color])
-
-            var direction = normalize(axis)
+            
+            let direction = normalize(axis)
             var orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
-
+            
             if axis == [1, 0, 0] {
                 orientation = simd_quatf(angle: -.pi/2, axis: [0, 0, 1])
             } else if axis == [0, 0, 1] {
                 orientation = simd_quatf(angle: .pi/2, axis: [1, 0, 0])
             }
-
+            
             arrow.orientation = orientation
             arrow.position = direction * (axisLength + arrowHeight / 2 - 0.15)
-
+            
             return arrow
         }
         
@@ -184,7 +207,7 @@ struct ARViewContainer: UIViewRepresentable {
             }
             return container
         }
-
+        
     }
 }
 
@@ -193,13 +216,15 @@ struct ARViewScreen: View {
     @State private var message: String? = "Selecione um plano para adicionar os eixos!"
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
+    @State private var showPanel = false
     
     var body: some View {
         ZStack {
             ARViewContainer(
                 message: $message,
                 hasAddedAxes: $hasAddedAxes,
-                currentAnchor: $currentAnchor
+                currentAnchor: $currentAnchor,
+                showPanel: $showPanel
             )
             .edgesIgnoringSafeArea(.all)
             
@@ -222,7 +247,21 @@ struct ARViewScreen: View {
                             .shadow(radius: 5)
                     }
                     .padding()
+                    
                     Spacer()
+                    
+                    Button(action: {
+                        showPanel.toggle()
+                    }) {
+                        Image(systemName: showPanel ? "xmark.circle.fill" : "info.circle")
+                            .resizable()
+                            .frame(width: 30, height: 30)
+                            .padding()
+                            .background(Color.white.opacity(0.7))
+                            .clipShape(Circle())
+                            .shadow(radius: 5)
+                    }
+                    .padding()
                 }
                 Spacer()
             }
@@ -232,6 +271,8 @@ struct ARViewScreen: View {
 
 extension ARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        guard !parent.hasAddedAxes else { return }
+        
         for anchor in anchors {
             if anchor is ARPlaneAnchor {
                 DispatchQueue.main.async {
