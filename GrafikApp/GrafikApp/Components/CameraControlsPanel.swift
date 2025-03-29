@@ -25,7 +25,7 @@ struct CameraControlsPanel: View {
                     cameraModel.posX = 0
                     cameraModel.posY = 0
                     cameraModel.posZ = 0
-                    onReset() // <- chama o método do Coordinator
+                    onReset()
                 }) {
                     Image(systemName: "arrow.counterclockwise")
                         .foregroundColor(.white)

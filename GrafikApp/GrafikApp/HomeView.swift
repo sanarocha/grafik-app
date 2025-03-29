@@ -20,7 +20,7 @@ struct HomeView: View {
             Button(action: {
                 isARViewPresented = true
             }) {
-                Text("Iniciar")
+                Text("Câmera Virtual")
                     .font(.title2)
                     .padding()
                     .frame(maxWidth: .infinity)

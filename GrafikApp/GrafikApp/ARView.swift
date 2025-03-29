@@ -37,17 +37,11 @@ struct ARViewContainer: UIViewRepresentable {
         return arView
     }
     
-    func updateUIView(_ uiView: ARView, context: Context) {
-        //        if showPanel {
-        //            context.coordinator.showFloatingPanel()
-        //        } else {
-        //            context.coordinator.hideFloatingPanel()
-        //        }
-    }
+    func updateUIView(_ uiView: ARView, context: Context) { }
     
     func makeCoordinator() -> Coordinator {
         let coordinator = Coordinator(self)
-        coordinatorRef = coordinator // 👈 salva no binding
+        coordinatorRef = coordinator
         return coordinator
     }
     
@@ -91,7 +85,7 @@ struct ARViewContainer: UIViewRepresentable {
                 
                 // painel em RA para mostrar as coordenadas em tempo real definidas no painel auxiliar
                 let panel = FloatingPanelEntity()
-                panel.position = [0, 0.5, 0] // vai flutuar 30cm acima do plano detectado
+                panel.position = [0, 0.5, 0]
                 anchor.addChild(panel)
                 floatingPanel = panel
                 
@@ -137,7 +131,7 @@ struct ARViewContainer: UIViewRepresentable {
         }
         
         func bindPositionUpdates(cameraModel: CameraPositionModel) {
-            self.cameraModel = cameraModel // 🟢 ESSA LINHA FALTAVA!
+            self.cameraModel = cameraModel
             
             cameraModel.$posX
                 .sink { [weak self] _ in self?.updateSceneContainerPosition() }
@@ -319,7 +313,7 @@ struct ARViewScreen: View {
                     Button(action: {
                         showPanel.toggle()
                     }) {
-                        Image(systemName: showPanel ? "xmark.circle.fill" : "info.circle")
+                        Image(systemName: showPanel ? "xmark.circle.fill" : "slider.horizontal.3")
                             .resizable()
                             .frame(width: 30, height: 30)
                             .padding()
