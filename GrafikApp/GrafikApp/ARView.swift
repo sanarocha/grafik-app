@@ -83,6 +83,10 @@ struct ARViewContainer: UIViewRepresentable {
                 sceneContainer = container
                 anchor.addChild(container)
                 
+                let targetCube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
+                targetCube.position = [0.1, 0.05, 0.1]
+                anchor.addChild(targetCube)
+                
                 // painel em RA para mostrar as coordenadas em tempo real definidas no painel auxiliar
                 let panel = FloatingPanelEntity()
                 panel.position = [0, 0.5, 0]
