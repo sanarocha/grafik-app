@@ -134,6 +134,8 @@ class Coordinator: NSObject {
         }
     
     func bindPositionUpdates(cameraModel: CameraPositionModel) {
+        self.cameraModel = cameraModel // 🟢 ESSA LINHA FALTAVA!
+
         cameraModel.$posX
             .sink { [weak self] _ in self?.updateSceneContainerPosition() }
             .store(in: &cancellables)
