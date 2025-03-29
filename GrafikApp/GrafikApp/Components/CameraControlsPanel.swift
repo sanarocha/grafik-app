@@ -16,10 +16,10 @@ struct CameraControlsPanel: View {
             Text("Mover Câmera Virtual")
                 .font(.headline)
                 .foregroundColor(.white)
-
-            SliderRow(label: "X", value: $cameraModel.posX)
-            SliderRow(label: "Y", value: $cameraModel.posY)
-            SliderRow(label: "Z", value: $cameraModel.posZ)
+            
+            SliderRow(label: "X", value: $cameraModel.posZ)
+            SliderRow(label: "Y", value: $cameraModel.posX)
+            SliderRow(label: "Z", value: $cameraModel.posY)
         }
         .padding()
         .background(Color.black.opacity(0.7))

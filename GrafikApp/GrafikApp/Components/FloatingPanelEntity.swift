@@ -40,7 +40,7 @@ class FloatingPanelEntity: Entity, HasModel {
     }
     
     func updateText(x: Float, y: Float, z: Float) {
-        let text = String(format: "posX: %.2f\nposY: %.2f\nposZ: %.2f", x, y, z)
+        let text = String(format: "posX: %.2f\nposY: %.2f\nposZ: %.2f", z, x, y)
         let textMesh = MeshResource.generateText(
             text,
             extrusionDepth: 0.002,
