@@ -16,7 +16,7 @@ class FloatingPanelEntity: Entity, HasModel {
         
         let backgroundMesh = MeshResource.generatePlane(width: 0.25, height: 0.20, cornerRadius: 0.015)
         let backgroundMaterial = SimpleMaterial(
-            color: .black.withAlphaComponent(0.5),
+            color: .black.withAlphaComponent(0.8),
             roughness: .init(floatLiteral: 1),
             isMetallic: false
         )

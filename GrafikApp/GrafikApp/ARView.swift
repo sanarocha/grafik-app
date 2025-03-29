@@ -15,13 +15,14 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
     @Binding var showPanel: Bool
-        
+    @Binding var coordinatorRef: Coordinator?
+    
     var cameraModel: CameraPositionModel
     
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
         let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal, .vertical]
+        config.planeDetection = [.horizontal]
         config.environmentTexturing = .automatic
         config.isLightEstimationEnabled = true
         arView.session.delegate = context.coordinator
@@ -37,25 +38,27 @@ struct ARViewContainer: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: ARView, context: Context) {
-//        if showPanel {
-//            context.coordinator.showFloatingPanel()
-//        } else {
-//            context.coordinator.hideFloatingPanel()
-//        }
+        //        if showPanel {
+        //            context.coordinator.showFloatingPanel()
+        //        } else {
+        //            context.coordinator.hideFloatingPanel()
+        //        }
     }
     
     func makeCoordinator() -> Coordinator {
-           Coordinator(self)
+        let coordinator = Coordinator(self)
+        coordinatorRef = coordinator // 👈 salva no binding
+        return coordinator
     }
     
-class Coordinator: NSObject {
-    var parent: ARViewContainer
-    weak var arView: ARView?
-    var floatingPanel: FloatingPanelEntity?
-    
-    var sceneContainer: Entity?
-    private var cancellables = Set<AnyCancellable>()
-    var cameraModel: CameraPositionModel?
+    class Coordinator: NSObject {
+        var parent: ARViewContainer
+        weak var arView: ARView?
+        var floatingPanel: FloatingPanelEntity?
+        
+        var sceneContainer: Entity?
+        private var cancellables = Set<AnyCancellable>()
+        var cameraModel: CameraPositionModel?
         
         init(_ parent: ARViewContainer) {
             self.parent = parent
@@ -112,19 +115,19 @@ class Coordinator: NSObject {
             }
         }
         
-    func showFloatingPanel() {
-        guard let arView = arView, floatingPanel == nil else { return }
+        func showFloatingPanel() {
+            guard let arView = arView, floatingPanel == nil else { return }
+            
+            let panel = FloatingPanelEntity()
+            panel.position = [0, 0.1, -0.3]
+            
+            let anchor = AnchorEntity(world: [0, 0, -0.3])
+            anchor.addChild(panel)
+            arView.scene.anchors.append(anchor)
+            
+            floatingPanel = panel
+        }
         
-        let panel = FloatingPanelEntity()
-        panel.position = [0, 0.1, -0.3]
-        
-        let anchor = AnchorEntity(world: [0, 0, -0.3])
-        anchor.addChild(panel)
-        arView.scene.anchors.append(anchor)
-        
-        floatingPanel = panel
-    }
-
         
         func hideFloatingPanel() {
             if let panel = floatingPanel {
@@ -132,30 +135,38 @@ class Coordinator: NSObject {
                 floatingPanel = nil
             }
         }
-    
-    func bindPositionUpdates(cameraModel: CameraPositionModel) {
-        self.cameraModel = cameraModel // 🟢 ESSA LINHA FALTAVA!
-
-        cameraModel.$posX
-            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
-            .store(in: &cancellables)
         
-        cameraModel.$posY
-            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
-            .store(in: &cancellables)
+        func bindPositionUpdates(cameraModel: CameraPositionModel) {
+            self.cameraModel = cameraModel // 🟢 ESSA LINHA FALTAVA!
+            
+            cameraModel.$posX
+                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .store(in: &cancellables)
+            
+            cameraModel.$posY
+                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .store(in: &cancellables)
+            
+            cameraModel.$posZ
+                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .store(in: &cancellables)
+        }
         
-        cameraModel.$posZ
-            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
-            .store(in: &cancellables)
-    }
-    
-    func updateSceneContainerPosition() {
-        guard let sceneContainer = sceneContainer,
-              let model = cameraModel else { return }
+        func updateSceneContainerPosition() {
+            guard let sceneContainer = sceneContainer,
+                  let model = cameraModel else { return }
+            
+            sceneContainer.position = [model.posX, model.posY, model.posZ]
+            floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
+        }
         
-        sceneContainer.position = [model.posX, model.posY, model.posZ]
-        floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
-    }
+        func resetCameraPosition() {
+            cameraModel?.posX = 0
+            cameraModel?.posY = 0
+            cameraModel?.posZ = 0
+            updateSceneContainerPosition()
+        }
+        
         
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
@@ -266,6 +277,8 @@ struct ARViewScreen: View {
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
+    @State private var arCoordinator: ARViewContainer.Coordinator?
+    
     
     @StateObject private var cameraModel = CameraPositionModel()
     
@@ -276,6 +289,7 @@ struct ARViewScreen: View {
                 hasAddedAxes: $hasAddedAxes,
                 currentAnchor: $currentAnchor,
                 showPanel: $showPanel,
+                coordinatorRef: $arCoordinator,
                 cameraModel: cameraModel
             )
             .edgesIgnoringSafeArea(.all)
@@ -320,7 +334,16 @@ struct ARViewScreen: View {
                 if showPanel {
                     VStack {
                         Spacer()
-                        CameraControlsPanel(cameraModel: cameraModel)
+                        CameraControlsPanel(
+                            cameraModel: cameraModel,
+                            onReset: {
+                                cameraModel.posX = 0
+                                cameraModel.posY = 0
+                                cameraModel.posZ = 0
+                                arCoordinator?.resetCameraPosition()
+                            }
+                        )
+                        
                     }
                 }
             }

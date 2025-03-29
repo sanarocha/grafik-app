@@ -10,13 +10,28 @@ import SwiftUI
 
 struct CameraControlsPanel: View {
     @ObservedObject var cameraModel: CameraPositionModel
+    var onReset: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Mover Câmera Virtual")
-                .font(.headline)
-                .foregroundColor(.white)
-            
+            HStack {
+                Text("Mover Câmera Virtual")
+                    .font(.headline)
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                Button(action: {
+                    cameraModel.posX = 0
+                    cameraModel.posY = 0
+                    cameraModel.posZ = 0
+                    onReset() // <- chama o método do Coordinator
+                }) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .foregroundColor(.white)
+                }
+            }
+
             SliderRow(label: "X", value: $cameraModel.posZ)
             SliderRow(label: "Y", value: $cameraModel.posX)
             SliderRow(label: "Z", value: $cameraModel.posY)
@@ -28,6 +43,7 @@ struct CameraControlsPanel: View {
         .padding()
     }
 }
+
 
 struct SliderRow: View {
     var label: String
