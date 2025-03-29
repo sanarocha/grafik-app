@@ -8,12 +8,15 @@
 import SwiftUI
 import RealityKit
 import ARKit
+import Combine
 
 struct ARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
     @Binding var showPanel: Bool
+        
+    var cameraModel: CameraPositionModel
     
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -28,25 +31,31 @@ struct ARViewContainer: UIViewRepresentable {
         arView.addGestureRecognizer(tapGesture)
         
         context.coordinator.arView = arView
+        context.coordinator.arView = arView
+        context.coordinator.bindPositionUpdates(cameraModel: cameraModel)
         return arView
     }
     
     func updateUIView(_ uiView: ARView, context: Context) {
-        if showPanel {
-            context.coordinator.showFloatingPanel()
-        } else {
-            context.coordinator.hideFloatingPanel()
-        }
+//        if showPanel {
+//            context.coordinator.showFloatingPanel()
+//        } else {
+//            context.coordinator.hideFloatingPanel()
+//        }
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+           Coordinator(self)
     }
     
-    class Coordinator: NSObject {
-        var parent: ARViewContainer
-        weak var arView: ARView?
-        var floatingPanel: FloatingPanelEntity?
+class Coordinator: NSObject {
+    var parent: ARViewContainer
+    weak var arView: ARView?
+    var floatingPanel: FloatingPanelEntity?
+    
+    var sceneContainer: Entity?
+    private var cancellables = Set<AnyCancellable>()
+    var cameraModel: CameraPositionModel?
         
         init(_ parent: ARViewContainer) {
             self.parent = parent
@@ -62,12 +71,18 @@ struct ARViewContainer: UIViewRepresentable {
                 let anchor = AnchorEntity(world: firstResult.worldTransform)
                 arView.scene.addAnchor(anchor)
                 
+                let container = Entity()
+                let axisContainer = createAxis()
+                axisContainer.position.y += 0.01
+                container.addChild(axisContainer)
+                
                 let axis = createAxis()
                 axis.position.y += 0.01
                 anchor.addChild(axis)
                 
                 let plane = createPlane()
                 anchor.addChild(plane)
+                sceneContainer = container
                 
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
@@ -107,6 +122,27 @@ struct ARViewContainer: UIViewRepresentable {
                 floatingPanel = nil
             }
         }
+    
+    func bindPositionUpdates(cameraModel: CameraPositionModel) {
+        cameraModel.$posX
+            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+            .store(in: &cancellables)
+        
+        cameraModel.$posY
+            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+            .store(in: &cancellables)
+        
+        cameraModel.$posZ
+            .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+            .store(in: &cancellables)
+    }
+    
+    func updateSceneContainerPosition() {
+        guard let sceneContainer = sceneContainer,
+              let model = cameraModel else { return }
+        
+        sceneContainer.position = [model.posX, model.posY, model.posZ]
+    }
         
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
@@ -218,13 +254,16 @@ struct ARViewScreen: View {
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
     
+    @StateObject private var cameraModel = CameraPositionModel()
+    
     var body: some View {
         ZStack {
             ARViewContainer(
                 message: $message,
                 hasAddedAxes: $hasAddedAxes,
                 currentAnchor: $currentAnchor,
-                showPanel: $showPanel
+                showPanel: $showPanel,
+                cameraModel: cameraModel
             )
             .edgesIgnoringSafeArea(.all)
             
@@ -264,6 +303,13 @@ struct ARViewScreen: View {
                     .padding()
                 }
                 Spacer()
+                
+                if showPanel {
+                    VStack {
+                        Spacer()
+                        CameraControlsPanel(cameraModel: cameraModel)
+                    }
+                }
             }
         }
     }
