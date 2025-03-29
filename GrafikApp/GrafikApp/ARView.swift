@@ -72,6 +72,7 @@ class Coordinator: NSObject {
                 arView.scene.addAnchor(anchor)
                 
                 let container = Entity()
+                
                 let axisContainer = createAxis()
                 axisContainer.position.y += 0.01
                 container.addChild(axisContainer)
@@ -83,6 +84,13 @@ class Coordinator: NSObject {
                 let plane = createPlane()
                 anchor.addChild(plane)
                 sceneContainer = container
+                anchor.addChild(container)
+                
+                // painel em RA para mostrar as coordenadas em tempo real definidas no painel auxiliar
+                let panel = FloatingPanelEntity()
+                panel.position = [0, 0.5, 0] // vai flutuar 30cm acima do plano detectado
+                anchor.addChild(panel)
+                floatingPanel = panel
                 
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
@@ -104,17 +112,19 @@ class Coordinator: NSObject {
             }
         }
         
-        func showFloatingPanel() {
-            guard let arView = arView, floatingPanel == nil else { return }
-            let panel = FloatingPanelEntity()
-            panel.position = [0, 0.1, -0.3]
-            panel.orientation = simd_quatf(angle: 0, axis: [0,1,0])
-            let anchor = AnchorEntity(world: [0, 0, -0.3])
-            anchor.addChild(panel)
-            arView.scene.anchors.append(anchor)
-            arView.scene.anchors.append(panel)
-            floatingPanel = panel
-        }
+    func showFloatingPanel() {
+        guard let arView = arView, floatingPanel == nil else { return }
+        
+        let panel = FloatingPanelEntity()
+        panel.position = [0, 0.1, -0.3]
+        
+        let anchor = AnchorEntity(world: [0, 0, -0.3])
+        anchor.addChild(panel)
+        arView.scene.anchors.append(anchor)
+        
+        floatingPanel = panel
+    }
+
         
         func hideFloatingPanel() {
             if let panel = floatingPanel {
@@ -142,6 +152,7 @@ class Coordinator: NSObject {
               let model = cameraModel else { return }
         
         sceneContainer.position = [model.posX, model.posY, model.posZ]
+        floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
     }
         
         func createAxis() -> ModelEntity {
