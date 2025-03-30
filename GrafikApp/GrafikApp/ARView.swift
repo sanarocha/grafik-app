@@ -32,7 +32,6 @@ struct ARViewContainer: UIViewRepresentable {
         arView.addGestureRecognizer(tapGesture)
         
         context.coordinator.arView = arView
-        context.coordinator.arView = arView
         context.coordinator.bindPositionUpdates(cameraModel: cameraModel)
         return arView
     }
@@ -53,6 +52,10 @@ struct ARViewContainer: UIViewRepresentable {
         var sceneContainer: Entity?
         private var cancellables = Set<AnyCancellable>()
         var cameraModel: CameraPositionModel?
+        var virtualCameraEntity: Entity?
+        var targetEntity: Entity? // referência ao cubo que será olhado
+        var cameraIndicator: ModelEntity?
+
         
         init(_ parent: ARViewContainer) {
             self.parent = parent
@@ -86,13 +89,24 @@ struct ARViewContainer: UIViewRepresentable {
                 let targetCube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
                 targetCube.position = [0.1, 0.05, 0.1]
                 anchor.addChild(targetCube)
+                self.targetEntity = targetCube
                 
                 // painel em RA para mostrar as coordenadas em tempo real definidas no painel auxiliar
                 let panel = FloatingPanelEntity()
                 panel.position = [0, 0.5, 0]
                 anchor.addChild(panel)
                 floatingPanel = panel
+
                 
+                // Cria o cone visualizando o ponto de vista da câmera
+                let coneMesh = MeshResource.generateCone(height: 0.1, radius: 0.04)
+                let coneMaterial = SimpleMaterial(color: .cyan, isMetallic: false)
+                let coneEntity = ModelEntity(mesh: coneMesh, materials: [coneMaterial])
+                coneEntity.name = "cameraViewIndicator"
+
+                anchor.addChild(coneEntity)
+                self.cameraIndicator = coneEntity
+
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
                 
@@ -110,6 +124,21 @@ struct ARViewContainer: UIViewRepresentable {
                         self.parent.message = nil
                     }
                 }
+            }
+        }
+        
+        func updatePreviewPanel() {
+            guard let target = targetEntity,
+                  let arView = arView else { return }
+            
+            // Aqui vamos simular o "conteúdo da câmera" desenhando uma versão miniatura do cubo
+            let cubePreview = ModelEntity(mesh: .generateBox(size: 0.05), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
+            cubePreview.position = [0, 0, 0.01] // um pouquinho à frente do painel
+            
+            // Encontrar o painel na cena
+            if let panel = arView.scene.anchors.flatMap({ $0.children }).first(where: { $0.name == "previewPanel" }) {
+                panel.children.removeAll() // limpa antes
+                panel.addChild(cubePreview)
             }
         }
         
@@ -138,31 +167,38 @@ struct ARViewContainer: UIViewRepresentable {
             self.cameraModel = cameraModel
             
             cameraModel.$posX
-                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .sink { [weak self] _ in self?.updateCameraIndicator() }
                 .store(in: &cancellables)
             
             cameraModel.$posY
-                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .sink { [weak self] _ in self?.updateCameraIndicator() }
                 .store(in: &cancellables)
             
             cameraModel.$posZ
-                .sink { [weak self] _ in self?.updateSceneContainerPosition() }
+                .sink { [weak self] _ in self?.updateCameraIndicator() }
                 .store(in: &cancellables)
+            
+            updatePreviewPanel()
+            
         }
         
-        func updateSceneContainerPosition() {
-            guard let sceneContainer = sceneContainer,
+        func updateCameraIndicator() {
+            guard let indicator = cameraIndicator,
+                  let target = targetEntity,
                   let model = cameraModel else { return }
-            
-            sceneContainer.position = [model.posX, model.posY, model.posZ]
+
+            indicator.position = [model.posX, model.posY, model.posZ]
+
+            indicator.look(at: target.position(relativeTo: nil), from: indicator.position(relativeTo: nil), relativeTo: nil)
+
             floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
         }
-        
+
         func resetCameraPosition() {
             cameraModel?.posX = 0
             cameraModel?.posY = 0
             cameraModel?.posZ = 0
-            updateSceneContainerPosition()
+            updateCameraIndicator()
         }
         
         
