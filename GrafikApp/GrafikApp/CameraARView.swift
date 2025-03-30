@@ -10,7 +10,7 @@ import RealityKit
 import ARKit
 import Combine
 
-struct ARViewContainer: UIViewRepresentable {
+struct CameraARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
@@ -45,7 +45,7 @@ struct ARViewContainer: UIViewRepresentable {
     }
     
     class Coordinator: NSObject {
-        var parent: ARViewContainer
+        var parent: CameraARViewContainer
         weak var arView: ARView?
         var floatingPanel: FloatingPanelEntity?
         
@@ -57,7 +57,7 @@ struct ARViewContainer: UIViewRepresentable {
         var cameraIndicator: ModelEntity?
 
         
-        init(_ parent: ARViewContainer) {
+        init(_ parent: CameraARViewContainer) {
             self.parent = parent
         }
         
@@ -311,14 +311,14 @@ struct ARViewScreen: View {
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
-    @State private var arCoordinator: ARViewContainer.Coordinator?
+    @State private var arCoordinator: CameraARViewContainer.Coordinator?
     
     
     @StateObject private var cameraModel = CameraPositionModel()
     
     var body: some View {
         ZStack {
-            ARViewContainer(
+            CameraARViewContainer(
                 message: $message,
                 hasAddedAxes: $hasAddedAxes,
                 currentAnchor: $currentAnchor,
@@ -385,7 +385,7 @@ struct ARViewScreen: View {
     }
 }
 
-extension ARViewContainer.Coordinator: ARSessionDelegate {
+extension CameraARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard !parent.hasAddedAxes else { return }
         
