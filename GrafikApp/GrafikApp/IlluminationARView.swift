@@ -18,19 +18,26 @@ struct IlluminationARViewContainer: UIViewRepresentable {
     
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
-        let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal]
-        config.environmentTexturing = .automatic
-        config.isLightEstimationEnabled = true
+        
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal]
+        configuration.environmentTexturing = .automatic
+        configuration.isLightEstimationEnabled = true
+        
+        // carregar objetos 3D
+        if let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "AR Resources", bundle: nil) {
+            configuration.detectionObjects = referenceObjects        }
+        
         arView.session.delegate = context.coordinator
-        arView.session.run(config)
+        arView.session.run(configuration)
         
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
         arView.addGestureRecognizer(tapGesture)
-        
         context.coordinator.arView = arView
+        
         return arView
     }
+    
     
     func updateUIView(_ uiView: ARView, context: Context) { }
     
@@ -44,8 +51,11 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         var parent: IlluminationARViewContainer
         weak var arView: ARView?
         var sceneContainer: Entity?
+        var lightEntity: Entity?  // <- Adicione esta linha
         private var cancellables = Set<AnyCancellable>()
-
+        var objectAnchorId: UUID?
+        var beamEntity: ModelEntity?
+        
         init(_ parent: IlluminationARViewContainer) {
             self.parent = parent
         }
@@ -78,7 +88,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 let targetCube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
                 targetCube.position = [0.1, 0.05, 0.1]
                 anchor.addChild(targetCube)
-
+                
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
                 
@@ -88,16 +98,131 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             }
         }
         
-        func showMessage(_ text: String, duration: TimeInterval) {
-            DispatchQueue.main.async {
-                self.parent.message = text
-                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                    if text != "Selecione um plano para adicionar os eixos!" {
-                        self.parent.message = nil
-                    }
-                }
+        func updateLightFromObject(anchor: ARObjectAnchor) {
+            guard let targetAnchor = parent.currentAnchor else { return }
+            
+            let transform = anchor.transform
+            let position = SIMD3<Float>(
+                transform.columns.3.x,
+                transform.columns.3.y,
+                transform.columns.3.z
+            )
+
+            let forward = -SIMD3<Float>(
+                transform.columns.2.x,
+                transform.columns.2.y,
+                transform.columns.2.z
+            )
+
+            let targetPosition = position + forward * 0.3
+
+            // atualiza a luz existente
+            if let spotLightEntity = lightEntity {
+                spotLightEntity.position = position
+                let rotation = simd_quatf(from: [0, -1, 0], to: normalize(targetPosition - position))
+                spotLightEntity.orientation = rotation
+            }
+
+            if let beam = beamEntity {
+                let direction = targetPosition - position
+                let length = simd_length(direction)
+                beam.position = (position + targetPosition) / 2
+                let up = SIMD3<Float>(0, 1, 0)
+                beam.orientation = simd_quatf(from: up, to: normalize(direction))
             }
         }
+
+        
+        func handleObjectDetection(anchor: ARObjectAnchor) {
+            guard let arView = arView else { return }
+            guard let targetAnchor = parent.currentAnchor else {
+                print("⚠️ Nenhum anchor do cubo presente ainda.")
+                return
+            }
+            
+            let transform = anchor.transform
+            
+            // posição do objeto detectado
+            let position = SIMD3<Float>(
+                transform.columns.3.x,
+                transform.columns.3.y,
+                transform.columns.3.z
+            )
+            
+            // direção que o objeto está apontando (eixo Z negativo)
+            let forward = -SIMD3<Float>(
+                transform.columns.2.x
+                transform.columns.2.y,
+                transform.columns.2.z
+            )
+            
+            // posição alvo (onde a luz deve mirar)
+            let targetPosition = position + forward * 0.3
+            objectAnchorId = anchor.identifier
+
+            addSpotLight(from: position, to: targetPosition, in: targetAnchor)
+            
+            showMessage("💡 Luz projetada com base na lâmpada!", duration: 3)
+            print("💡 Luz adicionada de \(position) mirando para \(targetPosition)")
+        }
+        
+        func addSpotLight(from position: SIMD3<Float>, to target: SIMD3<Float>, in anchor: AnchorEntity) {
+            // Remove luz anterior
+            lightEntity?.removeFromParent()
+            
+            // Cria a entidade da luz
+            let spotLightEntity = Entity()
+            spotLightEntity.position = position
+
+            // Direção da luz
+            let direction = normalize(target - position)
+            let rotation = simd_quatf(from: [0, -1, 0], to: direction) // SpotLight aponta para -Y
+            spotLightEntity.orientation = rotation
+
+            // Cria o componente da luz
+            var spotLight = SpotLightComponent()
+            spotLight.color = .white
+            spotLight.intensity = 2000
+            spotLight.innerAngleInDegrees = 15
+            spotLight.outerAngleInDegrees = 45
+            spotLight.attenuationRadius = 2.0
+//            spotLight.shadow = SpotLightComponent.Shadow(maximumDistance: 2.0, depthBias: 1e-3)
+            spotLightEntity.components.set(spotLight)
+
+            // Adiciona entidade da luz ao anchor
+            anchor.addChild(spotLightEntity)
+
+            // Cria uma linha visual para indicar a direção da luz
+            let beam = createLightBeam(from: position, to: target)
+            beamEntity = beam
+            anchor.addChild(beam)
+
+            // Armazena
+            self.lightEntity = spotLightEntity
+
+            print("🔦 SpotLight adicionada de \(position) para \(target)")
+        }
+        
+        func createLightBeam(from start: SIMD3<Float>, to end: SIMD3<Float>) -> ModelEntity {
+            let direction = end - start
+            let length = simd_length(direction)
+            let midPoint = (start + end) / 2
+
+            // Cilindro fino para simular o feixe
+            let cylinderMesh = MeshResource.generateCylinder(height: length, radius: 0.002)
+            let cylinderMaterial = SimpleMaterial(color: .yellow.withAlphaComponent(0.8), isMetallic: false)
+
+            let beamEntity = ModelEntity(mesh: cylinderMesh, materials: [cylinderMaterial])
+            beamEntity.position = midPoint
+
+            // Rotaciona o cilindro para alinhar com a direção
+            let up = SIMD3<Float>(0, 1, 0)
+            let rotation = simd_quatf(from: up, to: normalize(direction))
+            beamEntity.orientation = rotation
+
+            return beamEntity
+        }
+
         
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
@@ -198,6 +323,17 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             }
             return container
         }
+        
+        func showMessage(_ text: String, duration: TimeInterval) {
+            DispatchQueue.main.async {
+                self.parent.message = text
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                    if text != "Selecione um plano para adicionar os eixos!" {
+                        self.parent.message = nil
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -208,7 +344,7 @@ struct IlluminationARViewScreen: View {
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
     @State private var arCoordinator: IlluminationARViewContainer.Coordinator?
-
+    
     
     var body: some View {
         ZStack {
@@ -244,20 +380,28 @@ struct IlluminationARViewScreen: View {
                     
                 }
                 Spacer()
-                            }
+            }
         }
     }
 }
 
 extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-        guard !parent.hasAddedAxes else { return }
-        
         for anchor in anchors {
-            if anchor is ARPlaneAnchor {
+            if let objectAnchor = anchor as? ARObjectAnchor {
+                handleObjectDetection(anchor: objectAnchor)
+            } else if let planeAnchor = anchor as? ARPlaneAnchor, !parent.hasAddedAxes {
                 DispatchQueue.main.async {
                     self.parent.message = "Plano detectado! Toque para adicionar os eixos."
                 }
+            }
+        }
+    }
+    
+    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        for anchor in anchors {
+            if let objectAnchor = anchor as? ARObjectAnchor {
+                updateLightFromObject(anchor: objectAnchor)
             }
         }
     }

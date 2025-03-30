@@ -47,9 +47,9 @@
 		932F1DBE2D6FAF0C00607B1E = {
 			isa = PBXGroup;
 			children = (
-				932F1DC92D6FAF0C00607B1E /* GrafikApp */,
 				93C958852D78A84D00291CB1 /* Frameworks */,
 				932F1DC82D6FAF0C00607B1E /* Products */,
+				932F1DC92D6FAF0C00607B1E /* GrafikApp */,
 			);
 			sourceTree = "<group>";
 		};
