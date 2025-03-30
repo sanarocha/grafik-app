@@ -1,8 +1,8 @@
 //
-//  ARView.swift
+//  IlluminationARView.swift
 //  GrafikApp
 //
-//  Created by Rossana Rocha on 17/03/25.
+//  Created by Rossana Rocha on 30/03/25.
 //
 
 import SwiftUI
@@ -10,14 +10,11 @@ import RealityKit
 import ARKit
 import Combine
 
-struct CameraARViewContainer: UIViewRepresentable {
+struct IlluminationARViewContainer: UIViewRepresentable {
     @Binding var message: String?
     @Binding var hasAddedAxes: Bool
     @Binding var currentAnchor: AnchorEntity?
-    @Binding var showPanel: Bool
     @Binding var coordinatorRef: Coordinator?
-    
-    var cameraModel: CameraPositionModel
     
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -32,7 +29,6 @@ struct CameraARViewContainer: UIViewRepresentable {
         arView.addGestureRecognizer(tapGesture)
         
         context.coordinator.arView = arView
-        context.coordinator.bindPositionUpdates(cameraModel: cameraModel)
         return arView
     }
     
@@ -45,19 +41,12 @@ struct CameraARViewContainer: UIViewRepresentable {
     }
     
     class Coordinator: NSObject {
-        var parent: CameraARViewContainer
+        var parent: IlluminationARViewContainer
         weak var arView: ARView?
-        var floatingPanel: FloatingPanelEntity?
-        
         var sceneContainer: Entity?
         private var cancellables = Set<AnyCancellable>()
-        var cameraModel: CameraPositionModel?
-        var virtualCameraEntity: Entity?
-        var targetEntity: Entity? // referência ao cubo que será olhado
-        var cameraIndicator: ModelEntity?
 
-        
-        init(_ parent: CameraARViewContainer) {
+        init(_ parent: IlluminationARViewContainer) {
             self.parent = parent
         }
         
@@ -89,23 +78,6 @@ struct CameraARViewContainer: UIViewRepresentable {
                 let targetCube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
                 targetCube.position = [0.1, 0.05, 0.1]
                 anchor.addChild(targetCube)
-                self.targetEntity = targetCube
-                
-                // painel em RA para mostrar as coordenadas em tempo real definidas no painel auxiliar
-                let panel = FloatingPanelEntity()
-                panel.position = [0, 0.5, 0]
-                anchor.addChild(panel)
-                floatingPanel = panel
-
-                
-                // Cria o cone visualizando o ponto de vista da câmera
-                let coneMesh = MeshResource.generateCone(height: 0.1, radius: 0.04)
-                let coneMaterial = SimpleMaterial(color: .cyan, isMetallic: false)
-                let coneEntity = ModelEntity(mesh: coneMesh, materials: [coneMaterial])
-                coneEntity.name = "cameraViewIndicator"
-
-                anchor.addChild(coneEntity)
-                self.cameraIndicator = coneEntity
 
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
@@ -126,82 +98,6 @@ struct CameraARViewContainer: UIViewRepresentable {
                 }
             }
         }
-        
-        func updatePreviewPanel() {
-            guard let target = targetEntity,
-                  let arView = arView else { return }
-            
-            // Aqui vamos simular o "conteúdo da câmera" desenhando uma versão miniatura do cubo
-            let cubePreview = ModelEntity(mesh: .generateBox(size: 0.05), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
-            cubePreview.position = [0, 0, 0.01] // um pouquinho à frente do painel
-            
-            // Encontrar o painel na cena
-            if let panel = arView.scene.anchors.flatMap({ $0.children }).first(where: { $0.name == "previewPanel" }) {
-                panel.children.removeAll() // limpa antes
-                panel.addChild(cubePreview)
-            }
-        }
-        
-        func showFloatingPanel() {
-            guard let arView = arView, floatingPanel == nil else { return }
-            
-            let panel = FloatingPanelEntity()
-            panel.position = [0, 0.1, -0.3]
-            
-            let anchor = AnchorEntity(world: [0, 0, -0.3])
-            anchor.addChild(panel)
-            arView.scene.anchors.append(anchor)
-            
-            floatingPanel = panel
-        }
-        
-        
-        func hideFloatingPanel() {
-            if let panel = floatingPanel {
-                panel.removeFromParent()
-                floatingPanel = nil
-            }
-        }
-        
-        func bindPositionUpdates(cameraModel: CameraPositionModel) {
-            self.cameraModel = cameraModel
-            
-            cameraModel.$posX
-                .sink { [weak self] _ in self?.updateCameraIndicator() }
-                .store(in: &cancellables)
-            
-            cameraModel.$posY
-                .sink { [weak self] _ in self?.updateCameraIndicator() }
-                .store(in: &cancellables)
-            
-            cameraModel.$posZ
-                .sink { [weak self] _ in self?.updateCameraIndicator() }
-                .store(in: &cancellables)
-            
-            updatePreviewPanel()
-            
-        }
-        
-        func updateCameraIndicator() {
-            guard let indicator = cameraIndicator,
-                  let target = targetEntity,
-                  let model = cameraModel else { return }
-
-            indicator.position = [model.posX, model.posY, model.posZ]
-
-            // isso faz o cone ficar girando em cima do cubo
-//            indicator.look(at: target.position(relativeTo: nil), from: indicator.position(relativeTo: nil), relativeTo: nil)
-
-            floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
-        }
-
-        func resetCameraPosition() {
-            cameraModel?.posX = 0
-            cameraModel?.posY = 0
-            cameraModel?.posZ = 0
-            updateCameraIndicator()
-        }
-        
         
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
@@ -305,26 +201,22 @@ struct CameraARViewContainer: UIViewRepresentable {
     }
 }
 
-struct CameraARViewScreen: View {
+struct IlluminationARViewScreen: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var message: String? = "Selecione um plano para adicionar os eixos!"
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
-    @State private var arCoordinator: CameraARViewContainer.Coordinator?
-    
-    
-    @StateObject private var cameraModel = CameraPositionModel()
+    @State private var arCoordinator: IlluminationARViewContainer.Coordinator?
+
     
     var body: some View {
         ZStack {
-            CameraARViewContainer(
+            IlluminationARViewContainer(
                 message: $message,
                 hasAddedAxes: $hasAddedAxes,
                 currentAnchor: $currentAnchor,
-                showPanel: $showPanel,
-                coordinatorRef: $arCoordinator,
-                cameraModel: cameraModel
+                coordinatorRef: $arCoordinator
             )
             .edgesIgnoringSafeArea(.all)
             
@@ -350,42 +242,14 @@ struct CameraARViewScreen: View {
                     
                     Spacer()
                     
-                    Button(action: {
-                        showPanel.toggle()
-                    }) {
-                        Image(systemName: showPanel ? "xmark.circle.fill" : "slider.horizontal.3")
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                            .padding()
-                            .background(Color.white.opacity(0.7))
-                            .clipShape(Circle())
-                            .shadow(radius: 5)
-                    }
-                    .padding()
                 }
                 Spacer()
-                
-                if showPanel {
-                    VStack {
-                        Spacer()
-                        CameraControlsPanel(
-                            cameraModel: cameraModel,
-                            onReset: {
-                                cameraModel.posX = 0
-                                cameraModel.posY = 0
-                                cameraModel.posZ = 0
-                                arCoordinator?.resetCameraPosition()
                             }
-                        )
-                        
-                    }
-                }
-            }
         }
     }
 }
 
-extension CameraARViewContainer.Coordinator: ARSessionDelegate {
+extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         guard !parent.hasAddedAxes else { return }
         
