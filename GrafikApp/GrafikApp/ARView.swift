@@ -189,7 +189,8 @@ struct ARViewContainer: UIViewRepresentable {
 
             indicator.position = [model.posX, model.posY, model.posZ]
 
-            indicator.look(at: target.position(relativeTo: nil), from: indicator.position(relativeTo: nil), relativeTo: nil)
+            // isso faz o cone ficar girando em cima do cubo
+//            indicator.look(at: target.position(relativeTo: nil), from: indicator.position(relativeTo: nil), relativeTo: nil)
 
             floatingPanel?.updateText(x: model.posX, y: model.posY, z: model.posZ)
         }
@@ -301,7 +302,6 @@ struct ARViewContainer: UIViewRepresentable {
             }
             return container
         }
-        
     }
 }
 
@@ -398,5 +398,3 @@ extension ARViewContainer.Coordinator: ARSessionDelegate {
         }
     }
 }
-
-
