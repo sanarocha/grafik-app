@@ -148,7 +148,7 @@ struct TransformationsARView: UIViewRepresentable {
         func updateCubeTransform(with model: TransformationModel) {
             guard let cube = cubeEntity else { return }
 
-            let translation = SIMD3<Float>(model.posX, model.posY, model.posZ)
+            let translation = SIMD3<Float>(model.posY, model.posZ, model.posX)
 
             let rotation = simd_quatf(angle: degreesToRadians(model.rotX), axis: [1, 0, 0])
                 * simd_quatf(angle: degreesToRadians(model.rotY), axis: [0, 1, 0])
