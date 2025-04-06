@@ -41,6 +41,7 @@ struct TransformationsARView: UIViewRepresentable {
     }
     
     class Coordinator: NSObject, ARSessionDelegate {
+        var matrixPanel: TransformationFloatingPanelEntity?
         var parent: TransformationsARView
         weak var arView: ARView?
         private var cancellables = Set<AnyCancellable>()
@@ -80,9 +81,10 @@ struct TransformationsARView: UIViewRepresentable {
                 cubeEntity = cube // salva para aplicar transformações
                 
                 // painel flutuante
-                let panel = FloatingPanelEntity()
-                panel.position = [0, 0.5, 0]
-                anchor.addChild(panel)
+                let matrixPanelEntity = TransformationFloatingPanelEntity()
+                matrixPanelEntity.position = [0, 0.6, 0] // logo acima do painel atual
+                anchor.addChild(matrixPanelEntity)
+                self.matrixPanel = matrixPanelEntity
                 
                 parent.currentAnchor = anchor
                 parent.hasAddedElements = true
@@ -144,7 +146,6 @@ struct TransformationsARView: UIViewRepresentable {
             .store(in: &cancellables)
         }
 
-
         func updateCubeTransform(with model: TransformationModel) {
             guard let cube = cubeEntity else { return }
 
@@ -157,6 +158,7 @@ struct TransformationsARView: UIViewRepresentable {
             let scale = SIMD3<Float>(repeating: model.scale)
 
             cube.transform = Transform(scale: scale, rotation: rotation, translation: translation)
+            matrixPanel?.updateTransformMatrix(cube.transform)
         }
 
         private func degreesToRadians(_ degrees: Float) -> Float {
@@ -257,7 +259,6 @@ struct TransformationsARView: UIViewRepresentable {
 
     }
 }
-
 
 struct TransformationsARViewScreen: View {
     @Environment(\.presentationMode) var presentationMode

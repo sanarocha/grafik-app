@@ -73,8 +73,6 @@ struct TransformationControlsPanel: View {
     }
 }
 
-
-
 struct TransformationSliderRow: View {
     var label: String
     @Binding var value: Float
