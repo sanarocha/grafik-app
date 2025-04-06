@@ -287,7 +287,7 @@ struct TransformationsARViewScreen: View {
 
         let isCompleted = abs(x - 0.2) < 0.01 &&
                           abs(y - 0.1) < 0.01 &&
-                          abs(z - 0.3) < 0.01 // ✅ agora verifica Z positivo
+                          abs(z - 0.3) < 0.01
 
         if isCompleted {
             markExerciseCompleted(id: 1)
@@ -376,7 +376,7 @@ struct TransformationsARViewScreen: View {
                 message: $message,
                 hasAddedElements: $hasAddedElements,
                 currentAnchor: $currentAnchor,
-                transformModel: transformModel // passa para a view
+                transformModel: transformModel 
             )
             .edgesIgnoringSafeArea(.all)
             

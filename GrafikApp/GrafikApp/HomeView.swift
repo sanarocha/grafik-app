@@ -19,6 +19,8 @@ struct HomeView: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
             
+            Text("Selecione um dos temas abaixo")
+            
             Button(action: {
                 isCameraARViewPresented = true
             }) {
@@ -64,7 +66,7 @@ struct HomeView: View {
                     .padding(.horizontal, 40)
             }
             .fullScreenCover(isPresented: $isTransformationsARViewPresented) {
-                TransformationsARViewScreen()
+                TransformationTheoryScreen()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
