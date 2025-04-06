@@ -274,7 +274,7 @@ struct TransformationsARViewScreen: View {
 
     func setupExercises() {
         exercises = [
-            ExerciseData(id: 1, title: "Translação", instruction: "Mova o cubo para X: 0.2, Y: 0.1, Z: -0.3.", isCompleted: false, onCheck: { checkTranslationExercise() }),
+            ExerciseData(id: 1, title: "Translação", instruction: "Mova o cubo para X: 0.2, Y: 0.1, Z: 0.3.", isCompleted: false, onCheck: { checkTranslationExercise() }),
             ExerciseData(id: 2, title: "Rotação", instruction: "Rotacione o cubo para Pitch: 45°, Yaw: 0°, Roll: 90°.", isCompleted: false, onCheck: { checkRotationExercise() }),
             ExerciseData(id: 3, title: "Escala", instruction: "Defina a escala do cubo como 1.5.", isCompleted: false, onCheck: { checkScaleExercise() })
         ]
@@ -287,7 +287,7 @@ struct TransformationsARViewScreen: View {
 
         let isCompleted = abs(x - 0.2) < 0.01 &&
                           abs(y - 0.1) < 0.01 &&
-                          abs(z + 0.3) < 0.01
+                          abs(z - 0.3) < 0.01 // ✅ agora verifica Z positivo
 
         if isCompleted {
             markExerciseCompleted(id: 1)
@@ -355,7 +355,7 @@ struct TransformationsARViewScreen: View {
         )
         let textMaterial = SimpleMaterial(color: color, isMetallic: false)
         let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position = [-0.18, -0.05, 0.01] 
+        textEntity.position = [-0.18, -0.05, 0.01]
         
         let container = Entity()
         container.addChild(background)
