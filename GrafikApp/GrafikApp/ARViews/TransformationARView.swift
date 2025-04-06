@@ -1,0 +1,234 @@
+//
+//  TransformationARView.swift
+//  GrafikApp
+//
+//  Created by Rossana Rocha on 06/04/25.
+//
+
+import SwiftUI
+import RealityKit
+import ARKit
+import Combine
+
+struct TransformationsARView: UIViewRepresentable {
+    @Binding var message: String?
+    @Binding var hasAddedElements: Bool
+    @Binding var currentAnchor: AnchorEntity?
+    
+    @ObservedObject var transformModel: TransformationModel
+    
+    func makeUIView(context: Context) -> ARView {
+        let arView = ARView(frame: .zero)
+        let config = ARWorldTrackingConfiguration()
+        config.planeDetection = [.horizontal]
+        config.environmentTexturing = .automatic
+        config.isLightEstimationEnabled = true
+        arView.session.delegate = context.coordinator
+        arView.session.run(config)
+        
+        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
+        arView.addGestureRecognizer(tapGesture)
+        
+        context.coordinator.arView = arView
+        context.coordinator.bindTransformUpdates(model: transformModel)
+        return arView
+    }
+    
+    func updateUIView(_ uiView: ARView, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, ARSessionDelegate {
+        var parent: TransformationsARView
+        weak var arView: ARView?
+        private var cancellables = Set<AnyCancellable>()
+        
+        var cubeEntity: ModelEntity?
+
+        init(_ parent: TransformationsARView) {
+            self.parent = parent
+        }
+        
+        @objc func handleTap(_ sender: UITapGestureRecognizer) {
+            guard let arView = arView else { return }
+            let location = sender.location(in: arView)
+            let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .horizontal)
+            
+            if let firstResult = results.first, !parent.hasAddedElements {
+                let anchor = AnchorEntity(world: firstResult.worldTransform)
+                arView.scene.addAnchor(anchor)
+                
+                // plano
+                let plane = createPlane()
+                anchor.addChild(plane)
+                
+                // cubo roxo
+                let cube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
+                cube.position = [0.1, 0.05, 0.1]
+                anchor.addChild(cube)
+                cubeEntity = cube // salva para aplicar transformações
+                
+                // painel flutuante
+                let panel = FloatingPanelEntity()
+                panel.position = [0, 0.5, 0]
+                anchor.addChild(panel)
+                
+                parent.currentAnchor = anchor
+                parent.hasAddedElements = true
+                showMessage("Elementos adicionados!", duration: 4)
+            } else if !parent.hasAddedElements {
+                showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
+            }
+        }
+        
+        func createPlane() -> ModelEntity {
+            let mesh = MeshResource.generatePlane(width: 0.5, depth: 0.5)
+            let material = SimpleMaterial(color: .white.withAlphaComponent(0.5), isMetallic: false)
+            return ModelEntity(mesh: mesh, materials: [material])
+        }
+        
+        func showMessage(_ text: String, duration: TimeInterval) {
+            DispatchQueue.main.async {
+                self.parent.message = text
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                    if text != "Toque para adicionar o plano!" {
+                        self.parent.message = nil
+                    }
+                }
+            }
+        }
+        
+        func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+            guard !parent.hasAddedElements else { return }
+            for anchor in anchors {
+                if anchor is ARPlaneAnchor {
+                    DispatchQueue.main.async {
+                        self.parent.message = "Plano detectado! Toque para adicionar."
+                    }
+                }
+            }
+        }
+
+        func bindTransformUpdates(model: TransformationModel) {
+            Publishers.CombineLatest3(
+                Publishers.CombineLatest3(model.$posX, model.$posY, model.$posZ),
+                Publishers.CombineLatest3(model.$rotX, model.$rotY, model.$rotZ),
+                model.$scale
+            )
+            .sink { [weak self] position, rotation, scale in
+                let (x, y, z) = position
+                let (rx, ry, rz) = rotation
+
+                let tempModel = TransformationModel()
+                tempModel.posX = x
+                tempModel.posY = y
+                tempModel.posZ = z
+                tempModel.rotX = rx
+                tempModel.rotY = ry
+                tempModel.rotZ = rz
+                tempModel.scale = scale
+
+                self?.updateCubeTransform(with: tempModel)
+            }
+            .store(in: &cancellables)
+        }
+
+
+        func updateCubeTransform(with model: TransformationModel) {
+            guard let cube = cubeEntity else { return }
+
+            let translation = SIMD3<Float>(model.posX, model.posY, model.posZ)
+
+            let rotation = simd_quatf(angle: degreesToRadians(model.rotX), axis: [1, 0, 0])
+                * simd_quatf(angle: degreesToRadians(model.rotY), axis: [0, 1, 0])
+                * simd_quatf(angle: degreesToRadians(model.rotZ), axis: [0, 0, 1])
+
+            let scale = SIMD3<Float>(repeating: model.scale)
+
+            cube.transform = Transform(scale: scale, rotation: rotation, translation: translation)
+        }
+
+        private func degreesToRadians(_ degrees: Float) -> Float {
+            return degrees * .pi / 180
+        }
+    }
+}
+
+
+struct TransformationsARViewScreen: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var message: String? = "Toque para adicionar o plano!"
+    @State private var hasAddedElements = false
+    @State private var currentAnchor: AnchorEntity?
+
+    @StateObject private var transformModel = TransformationModel()
+    @State private var showPanel = false
+
+    var body: some View {
+        ZStack {
+            TransformationsARView(
+                message: $message,
+                hasAddedElements: $hasAddedElements,
+                currentAnchor: $currentAnchor,
+                transformModel: transformModel // passa para a view
+            )
+            .edgesIgnoringSafeArea(.all)
+            
+            if let message = message {
+                MessageOverlay(message: message)
+                    .transition(.opacity)
+            }
+            
+            VStack {
+                HStack {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .resizable()
+                            .frame(width: 20, height: 30)
+                            .padding()
+                            .background(Color.white.opacity(0.7))
+                            .clipShape(Circle())
+                            .shadow(radius: 5)
+                    }
+                    .padding()
+
+                    Spacer()
+                    
+                    Button(action: {
+                        showPanel.toggle()
+                    }) {
+                        Image(systemName: showPanel ? "xmark.circle.fill" : "slider.horizontal.3")
+                            .resizable()
+                            .frame(width: 30, height: 30)
+                            .padding()
+                            .background(Color.white.opacity(0.7))
+                            .clipShape(Circle())
+                            .shadow(radius: 5)
+                    }
+                    .padding()
+                }
+
+                Spacer()
+
+                if showPanel {
+                    TransformationControlsPanel(
+                        model: transformModel,
+                        onReset: {
+                            transformModel.posX = 0
+                            transformModel.posY = 0
+                            transformModel.posZ = 0
+                            transformModel.rotX = 0
+                            transformModel.rotY = 0
+                            transformModel.rotZ = 0
+                            transformModel.scale = 1.0
+                        }
+                    )
+                }
+            }
+        }
+    }
+}

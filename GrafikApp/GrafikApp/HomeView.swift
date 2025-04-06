@@ -10,14 +10,15 @@ import SwiftUI
 struct HomeView: View {
     @State private var isCameraARViewPresented = false
     @State private var isIlluminationARViewPresented = false
-
+    @State private var isTransformationsARViewPresented = false
+    
     var body: some View {
         VStack(spacing: 20) {
             Text("Grafik")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
-
+            
             Button(action: {
                 isCameraARViewPresented = true
             }) {
@@ -33,7 +34,7 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $isCameraARViewPresented) {
                 CameraARViewScreen()
             }
-
+            
             Button(action: {
                 isIlluminationARViewPresented = true
             }) {
@@ -49,6 +50,22 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $isIlluminationARViewPresented) {
                 IlluminationARViewScreen()
             }
+            
+            Button(action: {
+                isTransformationsARViewPresented = true
+            }) {
+                Text("Transformações Geométricas")
+                    .font(.title2)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 40)
+            }
+            .fullScreenCover(isPresented: $isTransformationsARViewPresented) {
+                TransformationsARViewScreen()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
@@ -62,3 +79,4 @@ struct HomeView_Previews: PreviewProvider {
         HomeView()
     }
 }
+
