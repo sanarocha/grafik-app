@@ -60,7 +60,16 @@ struct TransformationsARView: UIViewRepresentable {
                 let anchor = AnchorEntity(world: firstResult.worldTransform)
                 arView.scene.addAnchor(anchor)
                 
-                // plano
+                let container = Entity()
+                
+                let axisContainer = createAxis()
+                axisContainer.position.y += 0.01
+                container.addChild(axisContainer)
+                
+                let axis = createAxis()
+                axis.position.y += 0.01
+                anchor.addChild(axis)
+                
                 let plane = createPlane()
                 anchor.addChild(plane)
                 
@@ -153,6 +162,99 @@ struct TransformationsARView: UIViewRepresentable {
         private func degreesToRadians(_ degrees: Float) -> Float {
             return degrees * .pi / 180
         }
+        
+        func createAxis() -> ModelEntity {
+            let axisLength: Float = 0.3
+            let xAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
+            let yAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
+            let zAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
+            
+            let redTransparent = SimpleMaterial(color: UIColor.red.withAlphaComponent(0.3), isMetallic: false)
+            let greenTransparent = SimpleMaterial(color: UIColor.green.withAlphaComponent(0.3), isMetallic: false)
+            let blueTransparent = SimpleMaterial(color: UIColor.blue.withAlphaComponent(0.3), isMetallic: false)
+            
+            let xMaterial = SimpleMaterial(color: .red, isMetallic: false)
+            let yMaterial = SimpleMaterial(color: .green, isMetallic: false)
+            let zMaterial = SimpleMaterial(color: .blue, isMetallic: false)
+            
+            let xModel = ModelEntity(mesh: xAxis, materials: [xMaterial])
+            let yModel = ModelEntity(mesh: yAxis, materials: [yMaterial])
+            let zModel = ModelEntity(mesh: zAxis, materials: [zMaterial])
+            
+            xModel.position = SIMD3(0, 0, axisLength / 2)
+            xModel.addChild(makeDashedLine(axis: [0,0,1], color: redTransparent))
+            xModel.addChild(makeArrow(color: xMaterial, axis: [0,0,1]))
+            
+            yModel.position = SIMD3(axisLength / 2, 0, 0)
+            yModel.addChild(makeDashedLine(axis: [1,0,0], color: greenTransparent))
+            yModel.addChild(makeArrow(color: yMaterial, axis: [1,0,0]))
+            
+            zModel.position = SIMD3(0, axisLength / 2, 0)
+            zModel.addChild(makeDashedLine(axis: [0,1,0], color: blueTransparent))
+            zModel.addChild(makeArrow(color: zMaterial, axis: [0,1,0]))
+            
+            let axisEntity = Entity()
+            axisEntity.addChild(xModel)
+            axisEntity.addChild(yModel)
+            axisEntity.addChild(zModel)
+            
+            let container = ModelEntity()
+            container.addChild(axisEntity)
+            
+            return container
+        }
+
+        func makeArrow(color: SimpleMaterial, axis: SIMD3<Float>, arrowRadius: Float = 0.01, arrowHeight: Float = 0.05, axisLength: Float = 0.3) -> Entity {
+            let arrow = ModelEntity(mesh: .generateCone(height: arrowHeight, radius: arrowRadius), materials: [color])
+            
+            let direction = normalize(axis)
+            var orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
+            
+            if axis == [1, 0, 0] {
+                orientation = simd_quatf(angle: -.pi/2, axis: [0, 0, 1])
+            } else if axis == [0, 0, 1] {
+                orientation = simd_quatf(angle: .pi/2, axis: [1, 0, 0])
+            }
+            
+            arrow.orientation = orientation
+            arrow.position = direction * (axisLength + arrowHeight / 2 - 0.15)
+            
+            return arrow
+        }
+
+        func makeDashedLine(
+            axis: SIMD3<Float>,
+            color: SimpleMaterial,
+            segments: Int = 10,
+            segmentLength: Float = 0.02,
+            gap: Float = 0.01,
+            shaftRadius: Float = 0.005
+        ) -> Entity {
+            let container = Entity()
+            let initialOffset: Float = 0.15
+            
+            for i in 0..<segments {
+                let segment = ModelEntity(
+                    mesh: .generateBox(size: [shaftRadius * 2, shaftRadius * 2, segmentLength]),
+                    materials: [color]
+                )
+                
+                let offset = initialOffset + Float(i) * (segmentLength + gap) + segmentLength / 2
+                segment.position = -axis * offset
+                
+                if axis == [1,0,0] {
+                    segment.orientation = simd_quatf(angle: -.pi/2, axis: [0,1,0])
+                } else if axis == [0,1,0] {
+                    segment.orientation = simd_quatf(angle: 0, axis: [0,0,0])
+                } else if axis == [0,0,1] {
+                    segment.orientation = simd_quatf(angle: .pi/2, axis: [1,0,0])
+                }
+                
+                container.addChild(segment)
+            }
+            return container
+        }
+
     }
 }
 
