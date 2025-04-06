@@ -78,7 +78,7 @@ struct TransformationsARView: UIViewRepresentable {
                 let cube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
                 cube.position = [0.1, 0.05, 0.1]
                 anchor.addChild(cube)
-                cubeEntity = cube // salva para aplicar transformações
+                cubeEntity = cube
                 
                 // painel flutuante
                 let matrixPanelEntity = TransformationFloatingPanelEntity()
@@ -265,9 +265,110 @@ struct TransformationsARViewScreen: View {
     @State private var message: String? = "Toque para adicionar o plano!"
     @State private var hasAddedElements = false
     @State private var currentAnchor: AnchorEntity?
+    @State private var showExercisePanel = false
+    @State private var exercises: [ExerciseData] = []
 
     @StateObject private var transformModel = TransformationModel()
     @State private var showPanel = false
+
+
+    func setupExercises() {
+        exercises = [
+            ExerciseData(id: 1, title: "Translação", instruction: "Mova o cubo para X: 0.2, Y: 0.1, Z: -0.3.", isCompleted: false, onCheck: { checkTranslationExercise() }),
+            ExerciseData(id: 2, title: "Rotação", instruction: "Rotacione o cubo para Pitch: 45°, Yaw: 0°, Roll: 90°.", isCompleted: false, onCheck: { checkRotationExercise() }),
+            ExerciseData(id: 3, title: "Escala", instruction: "Defina a escala do cubo como 1.5.", isCompleted: false, onCheck: { checkScaleExercise() })
+        ]
+    }
+    
+    func checkTranslationExercise() {
+        let x = transformModel.posX
+        let y = transformModel.posY
+        let z = transformModel.posZ
+
+        let isCompleted = abs(x - 0.2) < 0.01 &&
+                          abs(y - 0.1) < 0.01 &&
+                          abs(z + 0.3) < 0.01
+
+        if isCompleted {
+            markExerciseCompleted(id: 1)
+            showMessageInAR("Exercício de Translação completo!", .green)
+        } else {
+            showMessageInAR("Exercício ainda não foi completado!", .red)
+        }
+    }
+
+    func checkRotationExercise() {
+        let pitch = transformModel.rotX
+        let yaw = transformModel.rotY
+        let roll = transformModel.rotZ
+
+        let isCompleted = abs(pitch - 45) < 2 &&
+                          abs(yaw) < 2 &&
+                          abs(roll - 90) < 2
+
+        if isCompleted {
+            markExerciseCompleted(id: 2)
+            showMessageInAR("Exercício Rotação completo!", .green)
+        }  else {
+            showMessageInAR("Exercício ainda não foi completado!", .red)
+        }
+    }
+
+    func checkScaleExercise() {
+        let scale = transformModel.scale
+
+        let isCompleted = abs(scale - 1.5) < 0.01
+
+        if isCompleted {
+            markExerciseCompleted(id: 3)
+            showMessageInAR("Exercício Escala completo!", .green)
+        }  else {
+            showMessageInAR("Exercício ainda não foi completado!", .red)
+        }
+    }
+    
+    func markExerciseCompleted(id: Int) {
+        if let index = exercises.firstIndex(where: { $0.id == id }) {
+            exercises[index].isCompleted = true
+        }
+    }
+    
+    func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
+        guard let anchor = currentAnchor else { return }
+
+        let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
+        let backgroundMaterial = SimpleMaterial(
+            color: .black.withAlphaComponent(0.75),
+            roughness: .init(floatLiteral: 1),
+            isMetallic: false
+        )
+        let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
+        background.position = [0, 0, 0.005]
+
+        let textMesh = MeshResource.generateText(
+            text,
+            extrusionDepth: 0.002,
+            font: .systemFont(ofSize: 0.020),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.35, height: 0.07),
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
+        let textMaterial = SimpleMaterial(color: color, isMetallic: false)
+        let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
+        textEntity.position = [-0.18, -0.05, 0.01] 
+        
+        let container = Entity()
+        container.addChild(background)
+        container.addChild(textEntity)
+
+        container.position = SIMD3<Float>(0, 0.3, -0.2)
+
+        anchor.addChild(container)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            container.removeFromParent()
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -302,6 +403,19 @@ struct TransformationsARViewScreen: View {
                     Spacer()
                     
                     Button(action: {
+                        showExercisePanel.toggle()
+                    }) {
+                        Image(systemName: showExercisePanel ? "xmark.circle.fill" : "doc.text.magnifyingglass")
+                            .resizable()
+                            .frame(width: 30, height: 30)
+                            .padding()
+                            .background(Color.white.opacity(0.7))
+                            .clipShape(Circle())
+                            .shadow(radius: 5)
+                    }
+                    .padding()
+                    
+                    Button(action: {
                         showPanel.toggle()
                     }) {
                         Image(systemName: showPanel ? "xmark.circle.fill" : "slider.horizontal.3")
@@ -331,6 +445,13 @@ struct TransformationsARViewScreen: View {
                         }
                     )
                 }
+                
+                if showExercisePanel {
+                    ExercisePanel(exercises: $exercises)
+                }
+            }
+            .onAppear {
+                setupExercises()
             }
         }
     }
