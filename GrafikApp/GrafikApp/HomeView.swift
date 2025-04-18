@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var isARViewPresented = false
+    @State private var isCameraARViewPresented = false
+    @State private var isIlluminationARViewPresented = false
+    @State private var isTransformationsARViewPresented = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -17,10 +19,12 @@ struct HomeView: View {
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
             
+            Text("Selecione um dos temas abaixo")
+            
             Button(action: {
-                isARViewPresented = true
+                isCameraARViewPresented = true
             }) {
-                Text("Iniciar")
+                Text("Câmera Virtual")
                     .font(.title2)
                     .padding()
                     .frame(maxWidth: .infinity)
@@ -29,8 +33,40 @@ struct HomeView: View {
                     .cornerRadius(10)
                     .padding(.horizontal, 40)
             }
-            .fullScreenCover(isPresented: $isARViewPresented) {
-                ARViewScreen()
+            .fullScreenCover(isPresented: $isCameraARViewPresented) {
+                CameraARViewScreen()
+            }
+            
+            Button(action: {
+                isIlluminationARViewPresented = true
+            }) {
+                Text("Iluminação")
+                    .font(.title2)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 40)
+            }
+            .fullScreenCover(isPresented: $isIlluminationARViewPresented) {
+                IlluminationARViewScreen()
+            }
+            
+            Button(action: {
+                isTransformationsARViewPresented = true
+            }) {
+                Text("Transformações Geométricas")
+                    .font(.title2)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal, 40)
+            }
+            .fullScreenCover(isPresented: $isTransformationsARViewPresented) {
+                TransformationTheoryScreen()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
