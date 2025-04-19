@@ -21,9 +21,22 @@
 		93C9588C2D78A9AB00291CB1 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		937FD4552DB3242300D11CEE /* Exceptions for "GrafikApp" folder in "GrafikApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = 932F1DC62D6FAF0C00607B1E /* GrafikApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		932F1DC92D6FAF0C00607B1E /* GrafikApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				937FD4552DB3242300D11CEE /* Exceptions for "GrafikApp" folder in "GrafikApp" target */,
+			);
 			path = GrafikApp;
 			sourceTree = "<group>";
 		};
@@ -279,11 +292,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"GrafikApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"GrafikApp/Resources/Preview Content\"";
 				DEVELOPMENT_TEAM = SWWK43D7PN;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GrafikApp/Resources/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.educational-games";
 				INFOPLIST_KEY_NSCameraUsageDescription = "O aplicativo precisa acessar a câmera para exibir realidade aumentada.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -314,11 +327,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"GrafikApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"GrafikApp/Resources/Preview Content\"";
 				DEVELOPMENT_TEAM = SWWK43D7PN;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "GrafikApp/Resources/Info.plist\n";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.educational-games";
 				INFOPLIST_KEY_NSCameraUsageDescription = "O aplicativo precisa acessar a câmera para exibir realidade aumentada.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

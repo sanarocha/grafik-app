@@ -11,58 +11,68 @@ struct HomeView: View {
     @State private var isCameraARViewPresented = false
     @State private var isIlluminationARViewPresented = false
     @State private var isTransformationsARViewPresented = false
-    
+
     var body: some View {
         VStack(spacing: 20) {
-            Text("Grafik")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-            
-            Text("Selecione um dos temas abaixo")
-            
+            Image("Logo Grafik")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 300, height: 200)
+
             Button(action: {
                 isCameraARViewPresented = true
             }) {
-                Text("Câmera Virtual")
-                    .font(.title2)
+                Text("CÂMERA VIRTUAL")
+                    .font(.balooBold(size: 20))
+                    .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .background(Color.grafikBlue)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.grafikOutline, lineWidth: 3)
+                    )
                     .padding(.horizontal, 40)
             }
             .fullScreenCover(isPresented: $isCameraARViewPresented) {
                 CameraARViewScreen()
             }
-            
+
             Button(action: {
                 isIlluminationARViewPresented = true
             }) {
-                Text("Iluminação")
-                    .font(.title2)
+                Text("ILUMINAÇÃO")
+                    .font(.balooBold(size: 20))
+                    .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .background(Color.grafikRed)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.grafikOutline, lineWidth: 3)
+                    )
                     .padding(.horizontal, 40)
             }
             .fullScreenCover(isPresented: $isIlluminationARViewPresented) {
                 IlluminationARViewScreen()
             }
-            
+
             Button(action: {
                 isTransformationsARViewPresented = true
             }) {
-                Text("Transformações Geométricas")
-                    .font(.title2)
+                Text("TRANSFORMAÇÕES GEOMÉTRICAS")
+                    .font(.balooBold(size: 20))
+                    .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .background(Color.grafikGreen)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.grafikOutline, lineWidth: 3)
+                    )
                     .padding(.horizontal, 40)
             }
             .fullScreenCover(isPresented: $isTransformationsARViewPresented) {
@@ -70,7 +80,7 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.grafikBackground)
         .edgesIgnoringSafeArea(.all)
     }
 }
