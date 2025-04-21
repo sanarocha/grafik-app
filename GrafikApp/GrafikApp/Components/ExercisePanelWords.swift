@@ -15,7 +15,6 @@ struct ExercisePanelWords: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Area para dismiss do teclado
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {

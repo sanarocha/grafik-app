@@ -38,7 +38,7 @@ struct HomeView: View {
                             .padding(.horizontal, 40)
                     }
                     .fullScreenCover(isPresented: $isCameraARViewPresented) {
-                        CameraARViewScreen()
+                        CameraTheoryView()
                     }
 
                     Button(action: {
