@@ -2,50 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Nome exibido no ícone do app -->
-    <key>CFBundleDisplayName</key>
-    <string>GrafikApp</string>
-
-    <!-- Nome do produto/bundle -->
-    <key>CFBundleName</key>
-    <string>GrafikApp</string>
-
-    <!-- Identificador único do app (deve bater com o Bundle Identifier do Build Settings) -->
-    <key>CFBundleIdentifier</key>
-    <string>sanarocha.GrafikApp</string>
-
-    <!-- Número da versão de build -->
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-
-    <!-- Número da versão pública -->
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-
-    <!-- Nome do binário principal -->
-    <key>CFBundleExecutable</key>
-    <string>$(EXECUTABLE_NAME)</string>
-
-    <!-- Categoria do app na App Store -->
-    <key>LSApplicationCategoryType</key>
-    <string>public.app-category.educational-games</string>
-
-    <!-- Fontes customizadas incluídas no bundle -->
-    <key>UIAppFonts</key>
-    <array>
-        <string>Fonts/Baloo2-Regular.ttf</string>
-        <string>Fonts/Baloo2-Bold.ttf</string>
-        <string>Fonts/Baloo2-SemiBold.ttf</string>
-        <string>Fonts/Baloo2-Medium.ttf</string>
-        <string>Fonts/Baloo2-ExtraBold.ttf</string>
-    </array>
-
-    <!-- Descrição de permissão para uso da câmera -->
-    <key>NSCameraUsageDescription</key>
-    <string>O aplicativo precisa acessar a câmera para exibir realidade aumentada.</string>
-
-    <!-- Placeholder para tela de lançamento (pode ser customizada depois) -->
-    <key>UILaunchScreen</key>
-    <dict/>
+	<key>CFBundleDisplayName</key>
+	<string>GrafikApp</string>
+	<key>CFBundleName</key>
+	<string>GrafikApp</string>
+	<key>CFBundleIdentifier</key>
+	<string>sanarocha.GrafikApp</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.educational-games</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Baloo2-Regular.ttf</string>
+		<string>Baloo2-Bold.ttf</string>
+		<string>Baloo2-SemiBold.ttf</string>
+		<string>Baloo2-Medium.ttf</string>
+		<string>Baloo2-ExtraBold.ttf</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>O aplicativo precisa acessar a câmera para exibir realidade aumentada.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

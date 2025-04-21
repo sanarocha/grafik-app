@@ -78,7 +78,7 @@ struct HomeView: View {
                             .padding(.horizontal, 40)
                     }
                     .fullScreenCover(isPresented: $isTransformationsARViewPresented) {
-                        TransformationTheoryScreen()
+                        TransformationTheoryView()
                     }
                 }
                 .padding(.top, 40)
