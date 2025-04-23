@@ -208,6 +208,7 @@ struct CameraARViewContainer: UIViewRepresentable {
             }
             return container
         }
+
     }
 }
 
@@ -218,7 +219,6 @@ struct CameraARViewScreen: View {
     @State private var currentAnchor: AnchorEntity?
     @State private var showExercisePanel = false
     @State private var exerciseCompleted = false
-
 
     @State private var arCoordinator: CameraARViewContainer.Coordinator?
 
@@ -273,9 +273,47 @@ struct CameraARViewScreen: View {
                 Spacer()
 
                 if showExercisePanel {
-                    ExercisePanelWords(isCompleted: $exerciseCompleted)
+                    ExercisePanelWords {
+                        showMessageInAR("Exercício completo!", .green)
+                    }
                 }
+
             }
+        }
+    }
+    
+    func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
+        guard let anchor = currentAnchor else {
+            print("🚫 Anchor não existe")
+            return
+        }
+
+        let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
+        let backgroundMaterial = SimpleMaterial(color: .black.withAlphaComponent(0.75), isMetallic: false)
+        let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
+        background.position = [0, 0, 0.005]
+
+        let textMesh = MeshResource.generateText(
+            text,
+            extrusionDepth: 0.002,
+            font: .systemFont(ofSize: 0.020),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.35, height: 0.07),
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
+        let textMaterial = SimpleMaterial(color: color, isMetallic: false)
+        let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
+        textEntity.position = [-0.18, -0.05, 0.01]
+
+        let container = Entity()
+        container.addChild(background)
+        container.addChild(textEntity)
+        container.position = [0, 0.3, -0.2]
+
+        anchor.addChild(container)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            container.removeFromParent()
         }
     }
 }

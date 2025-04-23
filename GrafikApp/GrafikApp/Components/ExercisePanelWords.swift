@@ -8,9 +8,11 @@
 import SwiftUI
 
 struct ExercisePanelWords: View {
-    @Binding var isCompleted: Bool
-    @State private var userInput: String = ""
-    @State private var showError: Bool = false
+    var onComplete: () -> Void
+
+    @State private var userInput = ""
+    @State private var showError = false
+    @State private var isCompleted = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -23,7 +25,6 @@ struct ExercisePanelWords: View {
 
                 VStack {
                     Spacer()
-
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Exercício")
                             .font(.title2.bold())
@@ -69,13 +70,14 @@ struct ExercisePanelWords: View {
     }
 
     func checkAnswer() {
-        let text = userInput.lowercased()
-        let containsRabbit = text.contains("rabbit")
-        let containsCatman = text.contains("catman")
+        let respostaCorreta = userInput.lowercased().contains("catman") &&
+                              userInput.lowercased().contains("rabbit")
 
-        if containsRabbit && containsCatman {
+        if respostaCorreta {
             isCompleted = true
             showError = false
+            UIApplication.shared.endEditing() // encerra edição ao completar
+            onComplete()
         } else {
             showError = true
         }
