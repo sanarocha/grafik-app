@@ -14,14 +14,19 @@ struct CameraTheoryView: View {
 
     let pages: [CameraPage] = [
         CameraPage(
-            title: "A Câmera Virtual",
+            title: "Conceito",
             imageName: "Camera1Image",
-            description: "Na computação gráfica, a câmera virtual é responsável por definir o que será visto na cena. Sua posição, orientação e campo de visão determinam como os objetos 3D aparecem para o observador."
+            description: "A câmera virtual define o que é visto na cena. Sua posição, rotação e campo de visão influenciam como os objetos aparecem."
         ),
         CameraPage(
-            title: "Exercício em Realidade Aumentada",
-            imageName: "Camera1Image",
-            description: "Você verá um conjunto de formas aparentemente desordenadas. Seu desafio é mover-se até encontrar o ângulo certo que revela duas palavras escondidas. Depois, basta digitá-las para concluir o exercício."
+            title: "Perspectiva",
+            imageName: "Camera2Image",
+            description: "A perspectiva muda conforme o ângulo da câmera. Isso afeta tamanho, profundidade e alinhamento dos objetos."
+        ),
+        CameraPage(
+            title: "Exercício em AR",
+            imageName: "Camera3Image",
+            description: "Mova-se até encontrar o ângulo que revela duas palavras escondidas. Digite-as para concluir o exercício!"
         )
     ]
 
