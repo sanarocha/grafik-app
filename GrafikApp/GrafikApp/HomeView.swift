@@ -58,7 +58,7 @@ struct HomeView: View {
                             .padding(.horizontal, 40)
                     }
                     .fullScreenCover(isPresented: $isIlluminationARViewPresented) {
-                        IlluminationARViewScreen()
+                        IlluminationTheoryView()
                     }
 
                     Button(action: {
