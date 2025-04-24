@@ -27,6 +27,11 @@ struct TransformationTheoryView: View {
             title: "Escala",
             imageName: "EscalaExampleImage",
             description: "A escala altera o tamanho do objeto. Escala uniforme mantém as proporções em todos os eixos."
+        ),
+        TransformationPage(
+            title: "Exercício em AR",
+            imageName: "ExercicioTransformacoesImage",
+            description: "Aplique translação, rotação e escala em um cubo 3D usando os controles. Mude os valores dos eixos e veja como o objeto se transforma no espaço!"
         )
     ]
 
