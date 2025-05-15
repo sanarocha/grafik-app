@@ -15,7 +15,7 @@ struct CameraControlsPanel: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Mover Câmera Virtual")
+                Text("Mover Câmera Sintética")
                     .font(.headline)
                     .foregroundColor(.white)
 

@@ -14,7 +14,7 @@ struct TutorialView: View {
         TutorialPage(
             title: "Escolha um tema",
             imageName: "Tutorial1Image",
-            description: "Na home do app, você pode escolher entre 3 assuntos para aprender. Cada tema representa um conceito da computação gráfica."
+            description: "Na home do app, você pode escolher entre 3 assuntos para aprender. Cada tema representa um conceito da Computação Gráfica."
         ),
         TutorialPage(
             title: "Leia a explicação",
@@ -22,14 +22,14 @@ struct TutorialView: View {
             description: "Antes de iniciar cada exercício, mostramos uma explicação simples do conceito a ser praticado."
         ),
         TutorialPage(
-            title: "Inicie o exercício em AR",
+            title: "Inicie o exercício em RA",
             imageName: "Tutorial3Image",
-            description: "Ao começar, a câmera será ativada. Mire para uma superfície plana e escaneie o ambiente para o app detectar os planos. Pressione a tela para adicionar os eixos e objetos no ambiente em realidade aumentada."
+            description: "Ao começar, a câmera será ativada. Mire para uma superfície plana e escaneie o ambiente para o app detectar os planos. Pressione a tela para adicionar os eixos e objetos no ambiente em Realidade Aumentada."
         ),
         TutorialPage(
             title: "Interaja com os controles",
             imageName: "Tutorial4Image",
-            description: "Use os botões na parte superior direita para interagir com o ambiente em realidade aumentada."
+            description: "Use os botões na parte superior direita para interagir com o ambiente em Realidade Aumentada."
         )
     ]
 

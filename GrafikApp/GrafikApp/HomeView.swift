@@ -24,7 +24,7 @@ struct HomeView: View {
                     Button(action: {
                         isCameraARViewPresented = true
                     }) {
-                        Text("CÂMERA VIRTUAL")
+                        Text("CÂMERA SINTÉTICA")
                             .font(.balooBold(size: 20))
                             .foregroundColor(.white)
                             .padding()
@@ -64,8 +64,8 @@ struct HomeView: View {
                     Button(action: {
                         isTransformationsARViewPresented = true
                     }) {
-                        Text("TRANSFORMAÇÕES GEOMÉTRICAS")
-                            .font(.balooBold(size: 20))
+                        Text("TRANSFORMAÇÕES GEOMÉTRICAS HOMOGÊNEAS")
+                            .font(.balooBold(size: 16))
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)

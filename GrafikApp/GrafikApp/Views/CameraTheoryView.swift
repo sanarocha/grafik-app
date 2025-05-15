@@ -16,7 +16,7 @@ struct CameraTheoryView: View {
         CameraPage(
             title: "Conceito",
             imageName: "Camera1Image",
-            description: "A câmera virtual define o que é visto na cena. Sua posição, rotação e campo de visão influenciam como os objetos aparecem."
+            description: "A câmera define o que é visto na cena. Sua posição, rotação e campo de visão (FOV) influenciam como os objetos aparecem."
         ),
         CameraPage(
             title: "Perspectiva",
@@ -24,7 +24,7 @@ struct CameraTheoryView: View {
             description: "A perspectiva muda conforme o ângulo da câmera. Isso afeta tamanho, profundidade e alinhamento dos objetos."
         ),
         CameraPage(
-            title: "Exercício em AR",
+            title: "Exercício em RA",
             imageName: "Camera3Image",
             description: "Mova-se até encontrar o ângulo que revela duas palavras escondidas. Digite-as para concluir o exercício!"
         )
@@ -37,7 +37,7 @@ struct CameraTheoryView: View {
                     .edgesIgnoringSafeArea(.all)
 
                 VStack(spacing: 20) {
-                    Text("CÂMERA\nVIRTUAL")
+                    Text("CÂMERA\nSINTÉTICA")
                         .font(.balooBold(size: 24))
                         .foregroundColor(.black)
                         .multilineTextAlignment(.center)

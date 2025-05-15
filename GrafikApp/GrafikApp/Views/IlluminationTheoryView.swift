@@ -24,9 +24,9 @@ struct IlluminationTheoryView: View {
             description: "Existem diferentes tipos, como luz direcional (sol), pontual (lâmpada) e spot (lanterna). Cada uma cria efeitos distintos na cena."
         ),
         IlluminationPage(
-            title: "Exercício em AR",
+            title: "Exercício em RA",
             imageName: "Light3Image",
-            description: "Aponte a luminária real para iluminar o cubo em AR. Você pode mover a luz, mudar seu tipo e até controlar a cor conforme o ângulo da lanterna!"
+            description: "Aponte a luminária real para iluminar o cubo em Realidade Aumentada. Você pode mover a luz, mudar seu tipo e até controlar a cor conforme o ângulo da lanterna!"
         )
     ]
 

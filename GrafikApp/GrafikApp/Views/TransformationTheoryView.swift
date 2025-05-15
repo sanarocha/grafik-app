@@ -19,19 +19,19 @@ struct TransformationTheoryView: View {
             description: "A translação move o objeto de um ponto ao outro no espaço 3D, modificando sua posição nos eixos X, Y e Z."
         ),
         TransformationPage(
-            title: "Rotação",
-            imageName: "RotationExampleImage",
-            description: "A rotação gira um objeto em torno de um eixo. Esse movimento pode ser para cima ou baixo (eixo X), para os lados (eixo Y) ou em torno de si mesmo (eixo Z)."
-        ),
-        TransformationPage(
             title: "Escala",
             imageName: "EscalaExampleImage",
             description: "A escala altera o tamanho do objeto. Escala uniforme mantém as proporções em todos os eixos."
         ),
         TransformationPage(
-            title: "Exercício em AR",
+            title: "Rotação",
+            imageName: "RotationExampleImage",
+            description: "A rotação gira um objeto em torno de um eixo. Esse movimento pode ser para cima ou baixo (eixo X), para os lados (eixo Y) ou em torno de si mesmo (eixo Z)."
+        ),
+        TransformationPage(
+            title: "Exercício em RA",
             imageName: "ExercicioTransformacoesImage",
-            description: "Aplique translação, rotação e escala em um cubo 3D usando os controles. Mude os valores dos eixos e veja como o objeto se transforma no espaço!"
+            description: "Aplique translação, escala e rotação em um cubo 3D usando os controles. Mude os valores dos eixos e veja como o objeto se transforma no espaço!"
         )
     ]
 
@@ -42,7 +42,7 @@ struct TransformationTheoryView: View {
                     .edgesIgnoringSafeArea(.all)
 
                 VStack(spacing: 20) {
-                    Text("TRANSFORMAÇÕES\nGEOMÉTRICAS")
+                    Text("TRANSFORMAÇÕES GEOMÉTRICAS HOMOGÊNEAS")
                         .font(.balooBold(size: 24))
                         .foregroundColor(.black)
                         .multilineTextAlignment(.center)
