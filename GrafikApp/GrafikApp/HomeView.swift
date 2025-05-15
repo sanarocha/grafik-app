@@ -29,7 +29,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.grafikBlue)
+                            .background(Color.grafikRed)
                             .cornerRadius(14)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
@@ -49,7 +49,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.grafikRed)
+                            .background(Color.grafikGreen)
                             .cornerRadius(14)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
@@ -69,7 +69,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.grafikGreen)
+                            .background(Color.grafikBlue)
                             .cornerRadius(14)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14)
