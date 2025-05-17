@@ -18,7 +18,7 @@ struct TransformationControlsPanel: View {
     var body: some View {
         GeometryReader { geometry in
             VStack {
-                Spacer() // empurra o painel para baixo
+                Spacer()
 
                 ScrollView {
                     VStack(spacing: 12) {
@@ -44,21 +44,21 @@ struct TransformationControlsPanel: View {
 
                         Group {
                             Text("Posição").foregroundColor(.white).bold()
-                            TransformationSliderRow(label: "X", value: $model.posX, range: -1...1)
-                            TransformationSliderRow(label: "Y", value: $model.posY, range: -1...1)
-                            TransformationSliderRow(label: "Z", value: $model.posZ, range: -1...1)
+                            TransformationSliderRow(label: "X", value: $model.posX, range: -1...1, step: 0.01)
+                            TransformationSliderRow(label: "Y", value: $model.posY, range: -1...1, step: 0.01)
+                            TransformationSliderRow(label: "Z", value: $model.posZ, range: -1...1, step: 0.01)
                         }
 
                         Group {
                             Text("Rotação (°)").foregroundColor(.white).bold()
-                            TransformationSliderRow(label: "Pitch", value: $model.rotX, range: -180...180)
-                            TransformationSliderRow(label: "Yaw", value: $model.rotY, range: -180...180)
-                            TransformationSliderRow(label: "Roll", value: $model.rotZ, range: -180...180)
+                            TransformationSliderRow(label: "Pitch", value: $model.rotX, range: -180...180, step: 5)
+                            TransformationSliderRow(label: "Yaw", value: $model.rotY, range: -180...180, step: 5)
+                            TransformationSliderRow(label: "Roll", value: $model.rotZ, range: -180...180, step: 5)
                         }
 
                         Group {
                             Text("Escala").foregroundColor(.white).bold()
-                            TransformationSliderRow(label: "Tamanho", value: $model.scale, range: 0.1...2.0)
+                            TransformationSliderRow(label: "Tamanho", value: $model.scale, range: 0.1...2.0, step: 0.1)
                         }
                     }
                     .padding()
@@ -77,6 +77,7 @@ struct TransformationSliderRow: View {
     var label: String
     @Binding var value: Float
     var range: ClosedRange<Float>
+    var step: Float
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -85,7 +86,10 @@ struct TransformationSliderRow: View {
             Slider(
                 value: Binding(
                     get: { Double(value) },
-                    set: { value = Float($0) }
+                    set: {
+                        let snapped = (Float($0) / step).rounded() * step
+                        value = min(max(snapped, range.lowerBound), range.upperBound)
+                    }
                 ),
                 in: Double(range.lowerBound)...Double(range.upperBound)
             )
