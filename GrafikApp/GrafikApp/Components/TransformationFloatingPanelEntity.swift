@@ -53,15 +53,15 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         let euler = rotationToEulerAngles(rot)
 
         let correctedPos = SIMD3<Float>(
-            pos.z,
             pos.x,
-            pos.y
+            pos.y,
+            pos.z
         )
 
         let correctedRot = SIMD3<Float>(
-            euler.z,
             euler.x,
-            euler.y
+            euler.y,
+            euler.z
         )
 
         let text = generateText(matrix: matrix, position: correctedPos, rotation: correctedRot, scale: scale)
@@ -102,7 +102,7 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
 
         📏 Escala: %.2f
         """, position.x, position.y, position.z,
-           rotation.x, rotation.y, rotation.z,
+           rotation.z, rotation.x, rotation.y,
            scale)
 
         return "\(matrixText)\n\(infoText)"
