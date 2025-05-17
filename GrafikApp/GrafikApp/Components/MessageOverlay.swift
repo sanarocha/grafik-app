@@ -12,9 +12,10 @@ struct MessageOverlay: View {
     var body: some View {
         Text(message)
             .padding()
-            .background(Color.black.opacity(0.7))
+            .background(Color.black.opacity(0.8))
             .foregroundColor(.white)
             .cornerRadius(10)
             .padding()
+            .allowsTightening(false)
     }
 }
