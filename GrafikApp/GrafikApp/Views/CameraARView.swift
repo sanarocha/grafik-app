@@ -52,7 +52,7 @@ struct CameraARViewContainer: UIViewRepresentable {
         private var cancellables = Set<AnyCancellable>()
         var cameraModel: CameraPositionModel?
         var virtualCameraEntity: Entity?
-        var targetEntity: Entity? // referência ao cubo que será olhado
+        var targetEntity: Entity?
         var cameraIndicator: ModelEntity?
 
         
@@ -81,7 +81,7 @@ struct CameraARViewContainer: UIViewRepresentable {
                 do {
                     let model = try Entity.loadModel(named: "words")
                     model.scale = [0.0001, 0.0001, 0.0001]
-                    model.position = [-0.2, 0.1, 0.1]
+                    model.position = [0.1, 0.1, 0.1]
                     anchor.addChild(model)
                 } catch {
                     print("Erro ao carregar modelo: \(error)")
@@ -111,57 +111,59 @@ struct CameraARViewContainer: UIViewRepresentable {
         
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
-            let xAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
-            let yAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
-            let zAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
-            
+
+            let xAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
+            let yAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
+            let zAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
+
             let redTransparent = SimpleMaterial(color: UIColor.red.withAlphaComponent(0.3), isMetallic: false)
             let greenTransparent = SimpleMaterial(color: UIColor.green.withAlphaComponent(0.3), isMetallic: false)
             let blueTransparent = SimpleMaterial(color: UIColor.blue.withAlphaComponent(0.3), isMetallic: false)
-            
+
             let xMaterial = SimpleMaterial(color: .red, isMetallic: false)
             let yMaterial = SimpleMaterial(color: .green, isMetallic: false)
             let zMaterial = SimpleMaterial(color: .blue, isMetallic: false)
-            
+
             let xModel = ModelEntity(mesh: xAxis, materials: [xMaterial])
+            xModel.position = SIMD3(axisLength / 2, 0, 0)
+            xModel.addChild(makeDashedLine(axis: [1, 0, 0], color: redTransparent))
+            xModel.addChild(makeArrow(color: xMaterial, axis: [1, 0, 0]))
+
             let yModel = ModelEntity(mesh: yAxis, materials: [yMaterial])
+            yModel.position = SIMD3(0, axisLength / 2, 0)
+            yModel.addChild(makeDashedLine(axis: [0, 1, 0], color: greenTransparent))
+            yModel.addChild(makeArrow(color: yMaterial, axis: [0, 1, 0]))
+
             let zModel = ModelEntity(mesh: zAxis, materials: [zMaterial])
-            
-            xModel.position = SIMD3(0, 0, axisLength / 2)
-            xModel.addChild(makeDashedLine(axis: [0,0,1], color: redTransparent))
-            xModel.addChild(makeArrow(color: xMaterial, axis: [0,0,1]))
-            
-            yModel.position = SIMD3(axisLength / 2, 0, 0)
-            yModel.addChild(makeDashedLine(axis: [1,0,0], color: greenTransparent))
-            yModel.addChild(makeArrow(color: yMaterial, axis: [1,0,0]))
-            
-            zModel.position = SIMD3(0, axisLength / 2, 0)
-            zModel.addChild(makeDashedLine(axis: [0,1,0], color: blueTransparent))
-            zModel.addChild(makeArrow(color: zMaterial, axis: [0,1,0]))
-            
+            zModel.position = SIMD3(0, 0, axisLength / 2)
+            zModel.addChild(makeDashedLine(axis: [0, 0, 1], color: blueTransparent))
+            zModel.addChild(makeArrow(color: zMaterial, axis: [0, 0, 1]))
+
             let axisEntity = Entity()
             axisEntity.addChild(xModel)
             axisEntity.addChild(yModel)
             axisEntity.addChild(zModel)
-            
+
             let entity = ModelEntity()
             entity.addChild(axisEntity)
-            
+
             return entity
         }
         
         func makeArrow(color: SimpleMaterial, axis: SIMD3<Float>, arrowRadius: Float = 0.01, arrowHeight: Float = 0.05, axisLength: Float = 0.3) -> Entity {
             let arrow = ModelEntity(mesh: .generateCone(height: arrowHeight, radius: arrowRadius), materials: [color])
             
-            let direction = normalize(axis)
             var orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             
             if axis == [1, 0, 0] {
                 orientation = simd_quatf(angle: -.pi/2, axis: [0, 0, 1])
+            } else if axis == [0, 1, 0] {
+                orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             } else if axis == [0, 0, 1] {
                 orientation = simd_quatf(angle: .pi/2, axis: [1, 0, 0])
             }
             
+            let direction = normalize(axis)
             arrow.orientation = orientation
             arrow.position = direction * (axisLength + arrowHeight / 2 - 0.15)
             
@@ -208,7 +210,6 @@ struct CameraARViewContainer: UIViewRepresentable {
             }
             return container
         }
-
     }
 }
 
