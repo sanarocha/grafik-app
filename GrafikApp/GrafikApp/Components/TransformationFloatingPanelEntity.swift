@@ -7,16 +7,29 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
     required init() {
         super.init()
         
-        let backgroundMesh = MeshResource.generatePlane(width: 0.42, height: 0.42, cornerRadius: 0.015)
+        // ---------- BORDA BRANCA ----------
+        let borderMesh = MeshResource.generatePlane(width: 0.42, height: 0.32, cornerRadius: 0.018)
+        let borderMaterial = SimpleMaterial(
+            color: .white, // branco puro
+            roughness: 1,
+            isMetallic: false
+        )
+        let border = ModelEntity(mesh: borderMesh, materials: [borderMaterial])
+        border.position = [0, 0, 0.003] // mais ao fundo
+        self.addChild(border)
+
+        // ---------- FUNDO PRETO ----------
+        let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.3, cornerRadius: 0.015)
         let backgroundMaterial = SimpleMaterial(
             color: .black.withAlphaComponent(0.85),
-            roughness: .init(floatLiteral: 1),
+            roughness: 1,
             isMetallic: false
         )
         let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
-        background.position = [0, 0, 0.005]
+        background.position = [0, 0, 0.004] // levemente à frente da borda
         self.addChild(background)
 
+        // ---------- TEXTO ----------
         let initialText = generateText(
             matrix: matrix_identity_float4x4,
             position: SIMD3<Float>(repeating: 0),
@@ -28,18 +41,18 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
             initialText,
             extrusionDepth: 0.002,
             font: .systemFont(ofSize: 0.016),
-            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.36),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.36, height: 0.28), // menor que antes
             alignment: .center,
             lineBreakMode: .byWordWrapping
         )
 
         let textMaterial = SimpleMaterial(
-            color: UIColor(white: 1.0, alpha: 1.0),
+            color: .white,
             isMetallic: false
         )
 
         textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position = [-0.19, -0.22, 0.02] // ajustado levemente para descer no painel
+        textEntity.position = [-0.18, -0.17, 0.02] // alinhado ao novo fundo
         self.addChild(textEntity)
     }
 
