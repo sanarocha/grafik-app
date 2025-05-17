@@ -410,7 +410,12 @@ struct TransformationsARViewScreen: View {
                     Spacer()
                     
                     Button(action: {
-                        showExercisePanel.toggle()
+                        if !showExercisePanel {
+                                showExercisePanel = true
+                                showPanel = false
+                            } else {
+                                showExercisePanel = false
+                            }
                     }) {
                         Image(systemName: showExercisePanel ? "xmark.circle.fill" : "doc.text.magnifyingglass")
                             .resizable()
@@ -423,7 +428,12 @@ struct TransformationsARViewScreen: View {
                     .padding()
                     
                     Button(action: {
-                        showPanel.toggle()
+                        if !showPanel {
+                             showPanel = true
+                             showExercisePanel = false
+                         } else {
+                             showPanel = false
+                         }
                     }) {
                         Image(systemName: showPanel ? "xmark.circle.fill" : "slider.horizontal.3")
                             .resizable()
