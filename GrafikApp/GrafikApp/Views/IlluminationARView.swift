@@ -38,7 +38,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         return arView
     }
     
-    
     func updateUIView(_ uiView: ARView, context: Context) { }
     
     func makeCoordinator() -> Coordinator {
@@ -131,7 +130,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 beam.orientation = simd_quatf(from: up, to: normalize(direction))
             }
         }
-
         
         func handleObjectDetection(anchor: ARObjectAnchor) {
             guard let arView = arView else { return }
@@ -223,72 +221,65 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             return beamEntity
         }
 
-        
         func createAxis() -> ModelEntity {
             let axisLength: Float = 0.3
-            let xAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
-            let yAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
-            let zAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
-            
+
+            let xAxis = MeshResource.generateBox(size: [axisLength, 0.01, 0.01])
+            let yAxis = MeshResource.generateBox(size: [0.01, axisLength, 0.01])
+            let zAxis = MeshResource.generateBox(size: [0.01, 0.01, axisLength])
+
             let redTransparent = SimpleMaterial(color: UIColor.red.withAlphaComponent(0.3), isMetallic: false)
             let greenTransparent = SimpleMaterial(color: UIColor.green.withAlphaComponent(0.3), isMetallic: false)
             let blueTransparent = SimpleMaterial(color: UIColor.blue.withAlphaComponent(0.3), isMetallic: false)
-            
+
             let xMaterial = SimpleMaterial(color: .red, isMetallic: false)
             let yMaterial = SimpleMaterial(color: .green, isMetallic: false)
             let zMaterial = SimpleMaterial(color: .blue, isMetallic: false)
-            
+
             let xModel = ModelEntity(mesh: xAxis, materials: [xMaterial])
+            xModel.position = SIMD3(axisLength / 2, 0, 0)
+            xModel.addChild(makeDashedLine(axis: [1, 0, 0], color: redTransparent))
+            xModel.addChild(makeArrow(color: xMaterial, axis: [1, 0, 0]))
+
             let yModel = ModelEntity(mesh: yAxis, materials: [yMaterial])
+            yModel.position = SIMD3(0, axisLength / 2, 0)
+            yModel.addChild(makeDashedLine(axis: [0, 1, 0], color: greenTransparent))
+            yModel.addChild(makeArrow(color: yMaterial, axis: [0, 1, 0]))
+
             let zModel = ModelEntity(mesh: zAxis, materials: [zMaterial])
-            
-            xModel.position = SIMD3(0, 0, axisLength / 2)
-            xModel.addChild(makeDashedLine(axis: [0,0,1], color: redTransparent))
-            xModel.addChild(makeArrow(color: xMaterial, axis: [0,0,1]))
-            
-            yModel.position = SIMD3(axisLength / 2, 0, 0)
-            yModel.addChild(makeDashedLine(axis: [1,0,0], color: greenTransparent))
-            yModel.addChild(makeArrow(color: yMaterial, axis: [1,0,0]))
-            
-            zModel.position = SIMD3(0, axisLength / 2, 0)
-            zModel.addChild(makeDashedLine(axis: [0,1,0], color: blueTransparent))
-            zModel.addChild(makeArrow(color: zMaterial, axis: [0,1,0]))
-            
+            zModel.position = SIMD3(0, 0, axisLength / 2)
+            zModel.addChild(makeDashedLine(axis: [0, 0, 1], color: blueTransparent))
+            zModel.addChild(makeArrow(color: zMaterial, axis: [0, 0, 1]))
+
             let axisEntity = Entity()
             axisEntity.addChild(xModel)
             axisEntity.addChild(yModel)
             axisEntity.addChild(zModel)
-            
+
             let entity = ModelEntity()
             entity.addChild(axisEntity)
-            
+
             return entity
         }
-        
+
         func makeArrow(color: SimpleMaterial, axis: SIMD3<Float>, arrowRadius: Float = 0.01, arrowHeight: Float = 0.05, axisLength: Float = 0.3) -> Entity {
             let arrow = ModelEntity(mesh: .generateCone(height: arrowHeight, radius: arrowRadius), materials: [color])
             
-            let direction = normalize(axis)
             var orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             
             if axis == [1, 0, 0] {
                 orientation = simd_quatf(angle: -.pi/2, axis: [0, 0, 1])
+            } else if axis == [0, 1, 0] {
+                orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
             } else if axis == [0, 0, 1] {
                 orientation = simd_quatf(angle: .pi/2, axis: [1, 0, 0])
             }
             
+            let direction = normalize(axis)
             arrow.orientation = orientation
             arrow.position = direction * (axisLength + arrowHeight / 2 - 0.15)
             
             return arrow
-        }
-        
-        func createPlane() -> ModelEntity {
-            let planeMesh = MeshResource.generatePlane(width: 0.5, depth: 0.5)
-            let planeMaterial = SimpleMaterial(color: .white.withAlphaComponent(0.5), isMetallic: false)
-            let planeEntity = ModelEntity(mesh: planeMesh, materials: [planeMaterial])
-            planeEntity.position = SIMD3(0, 0, 0)
-            return planeEntity
         }
         
         func makeDashedLine(
@@ -324,6 +315,14 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             return container
         }
         
+        func createPlane() -> ModelEntity {
+            let planeMesh = MeshResource.generatePlane(width: 0.5, depth: 0.5)
+            let planeMaterial = SimpleMaterial(color: .white.withAlphaComponent(0.5), isMetallic: false)
+            let planeEntity = ModelEntity(mesh: planeMesh, materials: [planeMaterial])
+            planeEntity.position = SIMD3(0, 0, 0)
+            return planeEntity
+        }
+        
         func showMessage(_ text: String, duration: TimeInterval) {
             DispatchQueue.main.async {
                 self.parent.message = text
@@ -344,7 +343,6 @@ struct IlluminationARViewScreen: View {
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false
     @State private var arCoordinator: IlluminationARViewContainer.Coordinator?
-    
     
     var body: some View {
         ZStack {
