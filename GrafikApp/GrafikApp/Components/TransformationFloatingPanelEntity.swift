@@ -10,12 +10,12 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         // ---------- BORDA BRANCA ----------
         let borderMesh = MeshResource.generatePlane(width: 0.42, height: 0.32, cornerRadius: 0.018)
         let borderMaterial = SimpleMaterial(
-            color: .white, // branco puro
+            color: .white,
             roughness: 1,
             isMetallic: false
         )
         let border = ModelEntity(mesh: borderMesh, materials: [borderMaterial])
-        border.position = [0, 0, 0.003] // mais ao fundo
+        border.position = [0, 0, 0.003]
         self.addChild(border)
 
         // ---------- FUNDO PRETO ----------
@@ -26,11 +26,11 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
             isMetallic: false
         )
         let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
-        background.position = [0, 0, 0.004] // levemente à frente da borda
+        background.position = [0, 0, 0.004]
         self.addChild(background)
 
-        // ---------- TEXTO ----------
-        let initialText = generateText(
+        // ---------- TEXTO INICIAL ----------
+        let initialText = Self.generateText(
             matrix: matrix_identity_float4x4,
             position: SIMD3<Float>(repeating: 0),
             rotation: SIMD3<Float>(repeating: 0),
@@ -40,22 +40,32 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         let textMesh = MeshResource.generateText(
             initialText,
             extrusionDepth: 0.002,
-            font: .systemFont(ofSize: 0.016),
-            containerFrame: CGRect(x: 0, y: 0, width: 0.36, height: 0.28), // menor que antes
+            font: UIFont(name: "Menlo", size: 0.015) ?? .systemFont(ofSize: 0.015),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.28),
             alignment: .center,
             lineBreakMode: .byWordWrapping
         )
 
-        let textMaterial = SimpleMaterial(
-            color: .white,
-            isMetallic: false
-        )
-
+        let textMaterial = SimpleMaterial(color: .white, isMetallic: false)
         textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position = [-0.18, -0.17, 0.02] // alinhado ao novo fundo
+        textEntity.position = [-0.18, -0.17, 0.02]
         self.addChild(textEntity)
     }
 
+    func updateText(matrix: float4x4, position: SIMD3<Float>, rotation: SIMD3<Float>, scale: Float) {
+        let textString = Self.generateText(matrix: matrix, position: position, rotation: rotation, scale: scale)
+
+        let mesh = MeshResource.generateText(
+            textString,
+            extrusionDepth: 0.002,
+            font: UIFont(name: "Menlo", size: 0.015) ?? .systemFont(ofSize: 0.015),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.28),
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
+        let material = SimpleMaterial(color: .white, isMetallic: false)
+        textEntity.model = ModelComponent(mesh: mesh, materials: [material])
+    }
 
     func updateTransformMatrix(_ transform: Transform) {
         let matrix = transform.matrix
@@ -77,20 +87,20 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
             euler.z
         )
 
-        let text = generateText(matrix: matrix, position: correctedPos, rotation: correctedRot, scale: scale)
+        let text = Self.generateText(matrix: matrix, position: correctedPos, rotation: correctedRot, scale: scale)
 
         let textMesh = MeshResource.generateText(
             text,
             extrusionDepth: 0.002,
-            font: .systemFont(ofSize: 0.016),
-            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.36),
+            font: UIFont(name: "Menlo", size: 0.015) ?? .systemFont(ofSize: 0.015),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.28),
             alignment: .center,
             lineBreakMode: .byWordWrapping
         )
         textEntity.model?.mesh = textMesh
     }
 
-    private func generateText(matrix: float4x4, position: SIMD3<Float>, rotation: SIMD3<Float>, scale: Float) -> String {
+    private static func generateText(matrix: float4x4, position: SIMD3<Float>, rotation: SIMD3<Float>, scale: Float) -> String {
         let matrixText = [
             matrix.columns.0,
             matrix.columns.1,
@@ -98,7 +108,7 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
             matrix.columns.3
         ]
         .map { col in
-            String(format: "[%.2f %.2f %.2f %.2f]", col.x, col.y, col.z, col.w)
+            String(format: "[%7.2f %7.2f %7.2f %7.2f]", col.x, col.y, col.z, col.w)
         }
         .joined(separator: "\n")
 
@@ -110,8 +120,8 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
 
         🔁 Rotação (°)
         Pitch (X): %.2f
-        Yaw (Y): %.2f
-        Roll (Z): %.2f
+        Yaw   (Y): %.2f
+        Roll  (Z): %.2f
 
         📏 Escala: %.2f
         """, position.x, position.y, position.z,
@@ -141,4 +151,3 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         return SIMD3<Float>(pitch, yaw, roll) * 180 / .pi
     }
 }
-
