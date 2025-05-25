@@ -4,18 +4,20 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>GrafikApp</string>
-	<key>CFBundleName</key>
-	<string>GrafikApp</string>
-	<key>CFBundleIdentifier</key>
-	<string>sanarocha.GrafikApp</string>
-	<key>CFBundleVersion</key>
-	<string>1.0</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>sanarocha.GrafikApp</string>
+	<key>CFBundleName</key>
+	<string>GrafikApp</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.educational-games</string>
+	<key>NSCameraUsageDescription</key>
+	<string>O aplicativo precisa acessar a câmera para exibir realidade aumentada.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Baloo2-Regular.ttf</string>
@@ -24,9 +26,7 @@
 		<string>Baloo2-Medium.ttf</string>
 		<string>Baloo2-ExtraBold.ttf</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>O aplicativo precisa acessar a câmera para exibir realidade aumentada.</string>
-	<key>UILaunchScreen</key>
-	<dict/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 </dict>
 </plist>
