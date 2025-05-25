@@ -24,7 +24,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         configuration.environmentTexturing = .automatic
         configuration.isLightEstimationEnabled = true
         
-        // carregar objetos 3D
         if let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "AR Resources", bundle: nil) {
             configuration.detectionObjects = referenceObjects        }
         
@@ -50,7 +49,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         var parent: IlluminationARViewContainer
         weak var arView: ARView?
         var sceneContainer: Entity?
-        var lightEntity: Entity?  // <- Adicione esta linha
+        var lightEntity: Entity?
         private var cancellables = Set<AnyCancellable>()
         var objectAnchorId: UUID?
         var beamEntity: ModelEntity?
@@ -63,7 +62,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             guard let arView = arView else { return }
             let location = sender.location(in: arView)
             let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .any)
-            
             
             if let firstResult = results.first, !parent.hasAddedAxes {
                 let anchor = AnchorEntity(world: firstResult.worldTransform)
@@ -165,40 +163,32 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         }
         
         func addSpotLight(from position: SIMD3<Float>, to target: SIMD3<Float>, in anchor: AnchorEntity) {
-            // Remove luz anterior
             lightEntity?.removeFromParent()
             
-            // Cria a entidade da luz
             let spotLightEntity = Entity()
             spotLightEntity.position = position
 
-            // Direção da luz
             let direction = normalize(target - position)
             let rotation = simd_quatf(from: [0, -1, 0], to: direction) // SpotLight aponta para -Y
             spotLightEntity.orientation = rotation
 
-            // Cria o componente da luz
             var spotLight = SpotLightComponent()
             spotLight.color = .white
             spotLight.intensity = 2000
             spotLight.innerAngleInDegrees = 15
             spotLight.outerAngleInDegrees = 45
             spotLight.attenuationRadius = 2.0
-//            spotLight.shadow = SpotLightComponent.Shadow(maximumDistance: 2.0, depthBias: 1e-3)
             spotLightEntity.components.set(spotLight)
 
-            // Adiciona entidade da luz ao anchor
             anchor.addChild(spotLightEntity)
 
-            // Cria uma linha visual para indicar a direção da luz
             let beam = createLightBeam(from: position, to: target)
             beamEntity = beam
             anchor.addChild(beam)
 
-            // Armazena
             self.lightEntity = spotLightEntity
 
-            print("🔦 SpotLight adicionada de \(position) para \(target)")
+            print("spotLight adicionada de \(position) para \(target)")
         }
         
         func createLightBeam(from start: SIMD3<Float>, to end: SIMD3<Float>) -> ModelEntity {
@@ -206,14 +196,12 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             let length = simd_length(direction)
             let midPoint = (start + end) / 2
 
-            // Cilindro fino para simular o feixe
             let cylinderMesh = MeshResource.generateCylinder(height: length, radius: 0.002)
             let cylinderMaterial = SimpleMaterial(color: .yellow.withAlphaComponent(0.8), isMetallic: false)
 
             let beamEntity = ModelEntity(mesh: cylinderMesh, materials: [cylinderMaterial])
             beamEntity.position = midPoint
 
-            // Rotaciona o cilindro para alinhar com a direção
             let up = SIMD3<Float>(0, 1, 0)
             let rotation = simd_quatf(from: up, to: normalize(direction))
             beamEntity.orientation = rotation
@@ -338,7 +326,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
 
 struct IlluminationARViewScreen: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var message: String? = "Selecione um plano para adicionar os eixos!"
+    @State private var message: String? = "Toque para adicionar o plano!"
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
     @State private var showPanel = false

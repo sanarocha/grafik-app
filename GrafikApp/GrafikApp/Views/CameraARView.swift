@@ -289,7 +289,7 @@ struct CameraARViewContainer: UIViewRepresentable {
 
 struct CameraARViewScreen: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var message: String? = "Selecione um plano para adicionar os eixos!"
+    @State private var message: String? = "Toque para adicionar o plano!"
     @State private var hasAddedAxes = false
     @State private var currentAnchor: AnchorEntity?
     @State private var showExercisePanel = false
@@ -335,7 +335,6 @@ struct CameraARViewScreen: View {
             }
         }
     }
-
 }
 
 extension CameraARViewContainer.Coordinator: ARSessionDelegate {
