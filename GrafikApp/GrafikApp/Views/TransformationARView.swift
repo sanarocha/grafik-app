@@ -74,15 +74,13 @@ struct TransformationsARView: UIViewRepresentable {
                 let plane = createPlane()
                 anchor.addChild(plane)
                 
-                // cubo roxo
                 let cube = ModelEntity(mesh: .generateBox(size: 0.1), materials: [SimpleMaterial(color: .purple, isMetallic: false)])
                 cube.position = [0.1, 0.05, 0.1]
                 anchor.addChild(cube)
                 cubeEntity = cube
                 
-                // painel flutuante
                 let matrixPanelEntity = TransformationFloatingPanelEntity()
-                matrixPanelEntity.position = [0, 0.6, 0] // logo acima do painel atual
+                matrixPanelEntity.position = [0, 0.6, 0]
                 anchor.addChild(matrixPanelEntity)
                 self.matrixPanel = matrixPanelEntity
                 
@@ -300,6 +298,7 @@ struct TransformationsARViewScreen: View {
             showMessageInAR("Exercício de Translação completo!", .green)
         } else {
             showMessageInAR("Exercício ainda não foi completado!", .red)
+            triggerHapticFeedback(.error)
         }
     }
 
@@ -317,6 +316,7 @@ struct TransformationsARViewScreen: View {
             showMessageInAR("Exercício Rotação completo!", .green)
         }  else {
             showMessageInAR("Exercício ainda não foi completado!", .red)
+            triggerHapticFeedback(.error)
         }
     }
 
@@ -330,13 +330,20 @@ struct TransformationsARViewScreen: View {
             showMessageInAR("Exercício Escala completo!", .green)
         }  else {
             showMessageInAR("Exercício ainda não foi completado!", .red)
+            triggerHapticFeedback(.error)
         }
     }
     
     func markExerciseCompleted(id: Int) {
         if let index = exercises.firstIndex(where: { $0.id == id }) {
             exercises[index].isCompleted = true
+            triggerHapticFeedback(.success)
         }
+    }
+    
+    func triggerHapticFeedback(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(type)
     }
     
     func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
