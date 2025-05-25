@@ -164,7 +164,7 @@ struct TransformationsARView: UIViewRepresentable {
             let scale = SIMD3<Float>(repeating: model.scale)
 
             cube.transform = Transform(scale: scale, rotation: rotation, translation: translation)
-            matrixPanel?.updateTransformMatrix(cube.transform)
+            matrixPanel?.updateTextFromModel(model: model, matrix: cube.transform.matrix)
         }
 
         private func degreesToRadians(_ degrees: Float) -> Float {

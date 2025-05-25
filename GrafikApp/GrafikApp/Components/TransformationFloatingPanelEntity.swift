@@ -51,6 +51,25 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         textEntity.position = [-0.18, -0.17, 0.02]
         self.addChild(textEntity)
     }
+    
+    func updateTextFromModel(model: TransformationModel, matrix: float4x4) {
+        let position = SIMD3<Float>(model.posX, model.posY, model.posZ)
+        let rotation = SIMD3<Float>(model.rotX, model.rotY, model.rotZ)
+        let scale = model.scale
+
+        let textString = Self.generateText(matrix: matrix, position: position, rotation: rotation, scale: scale)
+
+        let mesh = MeshResource.generateText(
+            textString,
+            extrusionDepth: 0.002,
+            font: UIFont(name: "Menlo", size: 0.015) ?? .systemFont(ofSize: 0.015),
+            containerFrame: CGRect(x: 0, y: 0, width: 0.38, height: 0.28),
+            alignment: .center,
+            lineBreakMode: .byWordWrapping
+        )
+        let material = SimpleMaterial(color: .white, isMetallic: false)
+        textEntity.model = ModelComponent(mesh: mesh, materials: [material])
+    }
 
     func updateText(matrix: float4x4, position: SIMD3<Float>, rotation: SIMD3<Float>, scale: Float) {
         let textString = Self.generateText(matrix: matrix, position: position, rotation: rotation, scale: scale)
@@ -99,18 +118,15 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         )
         textEntity.model?.mesh = textMesh
     }
-
+    
     private static func generateText(matrix: float4x4, position: SIMD3<Float>, rotation: SIMD3<Float>, scale: Float) -> String {
-        let matrixText = [
-            matrix.columns.0,
-            matrix.columns.1,
-            matrix.columns.2,
-            matrix.columns.3
-        ]
-        .map { col in
-            String(format: "[%7.2f %7.2f %7.2f %7.2f]", col.x, col.y, col.z, col.w)
-        }
-        .joined(separator: "\n")
+        let matrixText = (0..<4).map { row in
+            String(format: "[%7.2f %7.2f %7.2f %7.2f]",
+                matrix.columns.0[row],
+                matrix.columns.1[row],
+                matrix.columns.2[row],
+                matrix.columns.3[row])
+        }.joined(separator: "\n")
 
         let infoText = String(format:
         """
@@ -119,13 +135,13 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         X: %.2f  Y: %.2f  Z: %.2f
 
         🔁 Rotação (°)
-        Pitch (X): %.2f
-        Yaw   (Y): %.2f
-        Roll  (Z): %.2f
+        X (Pitch): %.2f
+        Y (Yaw):   %.2f
+        Z (Roll):  %.2f
 
         📏 Escala: %.2f
         """, position.x, position.y, position.z,
-           rotation.z, rotation.x, rotation.y,
+            rotation.x, rotation.y, rotation.z,
            scale)
 
         return "\(matrixText)\n\(infoText)"
