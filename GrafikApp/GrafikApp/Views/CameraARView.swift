@@ -54,7 +54,8 @@ struct CameraARViewContainer: UIViewRepresentable {
         var virtualCameraEntity: Entity?
         var targetEntity: Entity?
         var cameraIndicator: ModelEntity?
-
+        var exerciseCompleted = false
+        var alignmentTimer: Timer?
         
         init(_ parent: CameraARViewContainer) {
             self.parent = parent
@@ -82,6 +83,7 @@ struct CameraARViewContainer: UIViewRepresentable {
                     let model = try Entity.loadModel(named: "words")
                     model.scale = [0.0001, 0.0001, 0.0001]
                     model.position = [0.1, 0.1, 0.1]
+                    model.name = "words"
                     anchor.addChild(model)
                 } catch {
                     print("Erro ao carregar modelo: \(error)")
@@ -91,9 +93,10 @@ struct CameraARViewContainer: UIViewRepresentable {
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
 
-                showMessage("Tente encontrar a posição certa para descobrir as palavras escondidas!", duration: 4)
+                showMessage("Tente encontrar a posição certa para descobrir as palavras escondidas!", duration: 3)
+                self.startCheckingAlignment()
             } else if !parent.hasAddedAxes {
-                showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
+                showMessage("Tente apontar a câmera para uma área mais iluminada e escanear o ambiente!", duration: 3)
             }
         }
 
@@ -210,6 +213,77 @@ struct CameraARViewContainer: UIViewRepresentable {
             }
             return container
         }
+
+        func startCheckingAlignment() {
+            alignmentTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                self?.checkCameraAlignment()
+            }
+        }
+
+        func checkCameraAlignment() {
+            guard let arView = arView,
+                  let frame = arView.session.currentFrame,
+                  let anchor = parent.currentAnchor,
+                  !exerciseCompleted else { return }
+            let cameraTransform = frame.camera.transform
+            let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x,
+                                               cameraTransform.columns.3.y,
+                                               cameraTransform.columns.3.z)
+            let forward = -SIMD3<Float>(cameraTransform.columns.2.x,
+                                         cameraTransform.columns.2.y,
+                                         cameraTransform.columns.2.z)
+
+            guard let model = anchor.children.first(where: { $0.name == "words" || $0.name.contains("words") }) else {
+                return
+            }
+
+            let toModel = normalize(model.position(relativeTo: nil) - cameraPosition)
+            let alignment = dot(forward, toModel)
+
+            if alignment > 0.99 {
+                exerciseCompleted = true
+                showMessage("Palavra 'Rabbit' encontrada!", duration: 3)
+                
+                self.showMessageInAR("Exercício completo!", .green)
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        }
+        
+        func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
+            guard let anchor = parent.currentAnchor else {
+                print("🚫 Anchor não existe")
+                return
+            }
+
+            let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
+            let backgroundMaterial = SimpleMaterial(color: .black.withAlphaComponent(0.75), isMetallic: false)
+            let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
+            background.position = [0, 0, 0.005]
+
+            let textMesh = MeshResource.generateText(
+                text,
+                extrusionDepth: 0.002,
+                font: .systemFont(ofSize: 0.020),
+                containerFrame: CGRect(x: 0, y: 0, width: 0.35, height: 0.07),
+                alignment: .center,
+                lineBreakMode: .byWordWrapping
+            )
+            let textMaterial = SimpleMaterial(color: color, isMetallic: false)
+            let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
+            textEntity.position = [-0.18, -0.05, 0.01]
+
+            let container = Entity()
+            container.addChild(background)
+            container.addChild(textEntity)
+            container.position = [0, 0.3, -0.2]
+
+            anchor.addChild(container)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                container.removeFromParent()
+            }
+        }
     }
 }
 
@@ -220,16 +294,15 @@ struct CameraARViewScreen: View {
     @State private var currentAnchor: AnchorEntity?
     @State private var showExercisePanel = false
     @State private var exerciseCompleted = false
-
     @State private var arCoordinator: CameraARViewContainer.Coordinator?
-
+   
     var body: some View {
         ZStack {
             CameraARViewContainer(
                 message: $message,
                 hasAddedAxes: $hasAddedAxes,
                 currentAnchor: $currentAnchor,
-                showPanel: .constant(false), // desativa sliders
+                showPanel: .constant(false),
                 coordinatorRef: $arCoordinator,
                 cameraModel: CameraPositionModel()
             )
@@ -256,69 +329,14 @@ struct CameraARViewScreen: View {
                     .padding()
 
                     Spacer()
-
-                    Button(action: {
-                        showExercisePanel.toggle()
-                    }) {
-                        Image(systemName: showExercisePanel ? "xmark.circle.fill" : "doc.text.magnifyingglass")
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                            .padding()
-                            .background(Color.white.opacity(0.7))
-                            .clipShape(Circle())
-                            .shadow(radius: 5)
-                    }
-                    .padding()
                 }
 
                 Spacer()
-
-                if showExercisePanel {
-                    ExercisePanelWords {
-                        showMessageInAR("Exercício completo!", .green)
-                    }
-                }
-
             }
         }
     }
-    
-    func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
-        guard let anchor = currentAnchor else {
-            print("🚫 Anchor não existe")
-            return
-        }
 
-        let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
-        let backgroundMaterial = SimpleMaterial(color: .black.withAlphaComponent(0.75), isMetallic: false)
-        let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
-        background.position = [0, 0, 0.005]
-
-        let textMesh = MeshResource.generateText(
-            text,
-            extrusionDepth: 0.002,
-            font: .systemFont(ofSize: 0.020),
-            containerFrame: CGRect(x: 0, y: 0, width: 0.35, height: 0.07),
-            alignment: .center,
-            lineBreakMode: .byWordWrapping
-        )
-        let textMaterial = SimpleMaterial(color: color, isMetallic: false)
-        let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position = [-0.18, -0.05, 0.01]
-
-        let container = Entity()
-        container.addChild(background)
-        container.addChild(textEntity)
-        container.position = [0, 0.3, -0.2]
-
-        anchor.addChild(container)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            container.removeFromParent()
-        }
-    }
 }
-
 
 extension CameraARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {

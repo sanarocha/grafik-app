@@ -88,9 +88,8 @@ struct TransformationsARView: UIViewRepresentable {
                 
                 parent.currentAnchor = anchor
                 parent.hasAddedElements = true
-                showMessage("Elementos adicionados!", duration: 4)
             } else if !parent.hasAddedElements {
-                showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
+                showMessage("Tente apontar a câmera para uma área mais iluminada e escanear o ambiente!", duration: 4)
             }
         }
         

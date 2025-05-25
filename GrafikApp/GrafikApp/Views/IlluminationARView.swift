@@ -93,7 +93,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 
                 showMessage("Eixos adicionados com sucesso!", duration: 4)
             } else if !parent.hasAddedAxes {
-                showMessage("Tente apontar a câmera para uma área mais iluminada", duration: 4)
+                showMessage("Tente apontar a câmera para uma área mais iluminada e escanear o ambiente!", duration: 3)
             }
         }
         
