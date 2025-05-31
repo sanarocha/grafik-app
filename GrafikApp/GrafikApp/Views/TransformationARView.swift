@@ -349,10 +349,20 @@ struct TransformationsARViewScreen: View {
     func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
         guard let anchor = currentAnchor else { return }
 
+        // ---------- BORDA BRANCA ----------
+        let borderMesh = MeshResource.generatePlane(width: 0.42, height: 0.1, cornerRadius: 0.012)
+        let borderMaterial = SimpleMaterial(
+            color: .white,
+            roughness: 1,
+            isMetallic: false
+        )
+        let border = ModelEntity(mesh: borderMesh, materials: [borderMaterial])
+        border.position = [0, 0, 0.004]
+
         let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
         let backgroundMaterial = SimpleMaterial(
             color: .black.withAlphaComponent(0.75),
-            roughness: .init(floatLiteral: 1),
+            roughness: 1,
             isMetallic: false
         )
         let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
@@ -369,8 +379,9 @@ struct TransformationsARViewScreen: View {
         let textMaterial = SimpleMaterial(color: color, isMetallic: false)
         let textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
         textEntity.position = [-0.18, -0.05, 0.01]
-        
+
         let container = Entity()
+        container.addChild(border)
         container.addChild(background)
         container.addChild(textEntity)
 
@@ -382,6 +393,7 @@ struct TransformationsARViewScreen: View {
             container.removeFromParent()
         }
     }
+
 
     var body: some View {
         ZStack {
