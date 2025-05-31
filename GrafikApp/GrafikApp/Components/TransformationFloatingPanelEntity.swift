@@ -48,7 +48,7 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
 
         let textMaterial = SimpleMaterial(color: .white, isMetallic: false)
         textEntity = ModelEntity(mesh: textMesh, materials: [textMaterial])
-        textEntity.position = [-0.18, -0.17, 0.02]
+        textEntity.position = [-0.19, -0.17, 0.02]
         self.addChild(textEntity)
     }
     
@@ -131,15 +131,15 @@ class TransformationFloatingPanelEntity: Entity, HasModel {
         let infoText = String(format:
         """
         
-        📍 Posição
+        Posição
         X: %.2f  Y: %.2f  Z: %.2f
 
-        🔁 Rotação (°)
+        Rotação (°)
         X (Pitch): %.2f
         Y (Yaw):   %.2f
         Z (Roll):  %.2f
 
-        📏 Escala: %.2f
+        Escala: %.2f
         """, position.x, position.y, position.z,
             rotation.x, rotation.y, rotation.z,
            scale)

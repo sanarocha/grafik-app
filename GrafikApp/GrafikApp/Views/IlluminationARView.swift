@@ -157,9 +157,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             objectAnchorId = anchor.identifier
 
             addSpotLight(from: position, to: targetPosition, in: targetAnchor)
-            
-            showMessage("💡 Luz projetada com base na lâmpada!", duration: 3)
-            print("💡 Luz adicionada de \(position) mirando para \(targetPosition)")
+    
         }
         
         func addSpotLight(from position: SIMD3<Float>, to target: SIMD3<Float>, in anchor: AnchorEntity) {
@@ -387,6 +385,7 @@ extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         for anchor in anchors {
             if let objectAnchor = anchor as? ARObjectAnchor {
+                print("Lampada detectada!")
                 updateLightFromObject(anchor: objectAnchor)
             }
         }
