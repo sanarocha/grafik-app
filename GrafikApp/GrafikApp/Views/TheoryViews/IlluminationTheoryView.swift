@@ -26,7 +26,7 @@ struct IlluminationTheoryView: View {
         IlluminationPage(
             title: "Exercício em RA",
             imageName: "Light3Image",
-            description: "Aponte a luminária real para iluminar o cubo em Realidade Aumentada. Você pode mover a luz, mudar seu tipo e até controlar a cor conforme o ângulo da lanterna!"
+            description: "Explore a interação com o ambiente em Realidade Aumentada apontando a lanterna 3D real para iluminar o cubo!"
         )
     ]
 

@@ -78,7 +78,6 @@ struct CameraARViewContainer: UIViewRepresentable {
                 axisEntity.position.y += 0.01
                 axisWithLettersContainer.addChild(axisEntity)
                 anchor.addChild(axisWithLettersContainer)
-
                 
                 let positions: [SIMD3<Float>] = [
                     [0.1, 0.2, 0.1],
@@ -125,6 +124,10 @@ struct CameraARViewContainer: UIViewRepresentable {
                     let randomAngle = Float.random(in: 0...(2 * .pi))
                     container.orientation = simd_quatf(angle: randomAngle, axis: [0, 1, 0])
                 }
+                
+                let debugLine = makeDebugLine(length: 0.2, color: .purple)
+                debugLine.position = [0, 0, 0.15]
+                container.addChild(debugLine)
 
                 return container
             } catch {
@@ -132,6 +135,21 @@ struct CameraARViewContainer: UIViewRepresentable {
                 showMessage("Erro ao carregar o modelo \(name)", duration: 4)
                 return nil
             }
+        }
+        
+        func makeDebugLine(length: Float = 0.1, color: UIColor = .cyan) -> ModelEntity {
+            let thickness: Float = 0.005
+            let mesh = MeshResource.generateBox(size: [thickness, thickness, length])
+
+            let material = SimpleMaterial(
+                color: color.withAlphaComponent(0.4),
+                isMetallic: false
+            )
+
+            let line = ModelEntity(mesh: mesh, materials: [material])
+            line.position.z -= length / 2
+
+            return line
         }
         
         func showMessage(_ text: String, duration: TimeInterval) {
@@ -252,32 +270,61 @@ struct CameraARViewContainer: UIViewRepresentable {
                 self?.checkCameraAlignment()
             }
         }
+        
+        var validatedWords: Set<String> = []
 
         func checkCameraAlignment() {
             guard let arView = arView,
                   let frame = arView.session.currentFrame,
                   let anchor = parent.currentAnchor,
                   !exerciseCompleted else { return }
-            let cameraTransform = frame.camera.transform
-            let cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x,
-                                               cameraTransform.columns.3.y,
-                                               cameraTransform.columns.3.z)
-            let forward = -SIMD3<Float>(cameraTransform.columns.2.x,
-                                         cameraTransform.columns.2.y,
-                                         cameraTransform.columns.2.z)
 
-            guard let model = anchor.children.first(where: { $0.name == "words" || $0.name.contains("words") }) else {
-                return
+            let cameraTransform = frame.camera.transform
+
+            let cameraForward = -SIMD3<Float>(
+                cameraTransform.columns.2.x,
+                cameraTransform.columns.2.y,
+                cameraTransform.columns.2.z
+            )
+
+            let modelNames = ["camera", "projecao", "reflexos"]
+            let alignmentThreshold: Float = 0.97
+
+            for name in modelNames {
+                guard let container = anchor.children.first(where: { $0.name == name }) else {
+                    continue
+                }
+
+                let containerTransform = container.transformMatrix(relativeTo: nil)
+
+                let containerZ = -SIMD3<Float>(
+                    containerTransform.columns.2.x,
+                    containerTransform.columns.2.y,
+                    containerTransform.columns.2.z
+                )
+
+                let alignment = dot(cameraForward, containerZ)
+
+                let isAligned = alignment > alignmentThreshold
+
+                if isAligned && !validatedWords.contains(name) {
+                    validatedWords.insert(name)
+
+                    if let model = container.children.first(where: { $0 is ModelEntity }) as? ModelEntity {
+                        model.model?.materials = [
+                            SimpleMaterial(color: .cyan, isMetallic: false)
+                        ]
+                    }
+                }
             }
 
-            let toModel = normalize(model.position(relativeTo: nil) - cameraPosition)
-            let alignment = dot(forward, toModel)
+            let allAligned = validatedWords.count == modelNames.count
 
-            if alignment > 0.99 {
+            if allAligned {
                 exerciseCompleted = true
-                showMessage("Palavra 'Rabbit' encontrada!", duration: 3)
-                
-                self.showMessageInAR("Exercício completo!", .green)
+                showMessage("Todas as palavras foram encontradas!", duration: 3)
+                showMessageInAR("Exercício completo!", .green)
+
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
             }

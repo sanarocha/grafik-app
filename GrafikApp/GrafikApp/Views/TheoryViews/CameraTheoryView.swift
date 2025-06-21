@@ -26,7 +26,7 @@ struct CameraTheoryView: View {
         CameraPage(
             title: "Exercício em RA",
             imageName: "Camera3Image",
-            description: "Mova-se até encontrar o ângulo que revela duas palavras escondidas. Digite-as para concluir o exercício!"
+            description: "Mova-se até encontrar o ângulo que revela cada uma das três palavras escondidas espalhadas! Encontre todas para finalizar o exercício."
         )
     ]
 
