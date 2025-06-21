@@ -102,7 +102,12 @@ struct CameraARViewContainer: UIViewRepresentable {
             }
         }
         
-        func loadAndPlaceModel(named name: String, at position: SIMD3<Float>, scale: Float = 0.04) -> Entity? {
+        func loadAndPlaceModel(
+            named name: String,
+            at position: SIMD3<Float>,
+            scale: Float = 0.04,
+            applyRandomRotation: Bool = true
+        ) -> Entity? {
             do {
                 let model = try Entity.loadModel(named: name)
                 model.scale = [scale, scale, scale]
@@ -116,18 +121,17 @@ struct CameraARViewContainer: UIViewRepresentable {
                 container.position = position
                 container.name = name
 
+                if applyRandomRotation {
+                    let randomAngle = Float.random(in: 0...(2 * .pi))
+                    container.orientation = simd_quatf(angle: randomAngle, axis: [0, 1, 0])
+                }
+
                 return container
             } catch {
                 print("Erro ao carregar modelo \(name): \(error)")
                 showMessage("Erro ao carregar o modelo \(name)", duration: 4)
                 return nil
             }
-        }
-
-        func centerEntity(_ entity: Entity) {
-            let bounds = entity.visualBounds(relativeTo: nil)
-            let center = bounds.center
-            entity.position -= center
         }
         
         func showMessage(_ text: String, duration: TimeInterval) {
