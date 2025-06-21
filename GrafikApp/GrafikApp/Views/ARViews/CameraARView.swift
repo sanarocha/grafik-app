@@ -79,27 +79,56 @@ struct CameraARViewContainer: UIViewRepresentable {
                 axisWithLettersContainer.addChild(axisEntity)
                 anchor.addChild(axisWithLettersContainer)
 
-                do {
-                    let model = try Entity.loadModel(named: "words")
-                    model.scale = [0.0001, 0.0001, 0.0001]
-                    model.position = [0.1, 0.1, 0.1]
-                    model.name = "words"
-                    anchor.addChild(model)
-                } catch {
-                    print("Erro ao carregar modelo: \(error)")
-                    showMessage("Erro ao carregar o modelo 3D", duration: 4)
+                
+                let positions: [SIMD3<Float>] = [
+                    [0.1, 0.2, 0.1],
+                    [-0.1, 0.1, 0],
+                    [0.1, 0.3, -0.1]
+                ]
+                let names = ["camera", "projecao", "reflexos"]
+
+                for (name, position) in zip(names, positions) {
+                    if let entity = loadAndPlaceModel(named: name, at: position) {
+                        anchor.addChild(entity)
+                    }
                 }
 
                 parent.currentAnchor = anchor
                 parent.hasAddedAxes = true
-
                 showMessage("Tente encontrar a posição certa para descobrir as palavras escondidas!", duration: 3)
                 self.startCheckingAlignment()
             } else if !parent.hasAddedAxes {
                 showMessage("Tente apontar a câmera para uma área mais iluminada e escanear o ambiente!", duration: 3)
             }
         }
+        
+        func loadAndPlaceModel(named name: String, at position: SIMD3<Float>, scale: Float = 0.04) -> Entity? {
+            do {
+                let model = try Entity.loadModel(named: name)
+                model.scale = [scale, scale, scale]
 
+                let bounds = model.visualBounds(relativeTo: nil)
+                let center = bounds.center
+                model.position -= center
+
+                let container = Entity()
+                container.addChild(model)
+                container.position = position
+                container.name = name
+
+                return container
+            } catch {
+                print("Erro ao carregar modelo \(name): \(error)")
+                showMessage("Erro ao carregar o modelo \(name)", duration: 4)
+                return nil
+            }
+        }
+
+        func centerEntity(_ entity: Entity) {
+            let bounds = entity.visualBounds(relativeTo: nil)
+            let center = bounds.center
+            entity.position -= center
+        }
         
         func showMessage(_ text: String, duration: TimeInterval) {
             DispatchQueue.main.async {
