@@ -278,9 +278,9 @@ struct TransformationsARViewScreen: View {
 
     func setupExercises() {
         exercises = [
-            ExerciseData(id: 1, title: "Translação", instruction: "Mova o cubo para X: 0.2, Y: 0.1, Z: 0.3.", isCompleted: false, onCheck: { checkTranslationExercise() }),
+            ExerciseData(id: 1, title: "Translação", instruction: "Mova o cubo para X: 0.20, Y: 0.10, Z: 0.30.", isCompleted: false, onCheck: { checkTranslationExercise() }),
             ExerciseData(id: 2, title: "Rotação", instruction: "Rotacione o cubo para Pitch: 45°, Yaw: 0°, Roll: 90°.", isCompleted: false, onCheck: { checkRotationExercise() }),
-            ExerciseData(id: 3, title: "Escala", instruction: "Defina a escala do cubo como 1.5.", isCompleted: false, onCheck: { checkScaleExercise() })
+            ExerciseData(id: 3, title: "Escala", instruction: "Defina a escala do cubo como 1.50.", isCompleted: false, onCheck: { checkScaleExercise() })
         ]
     }
     
