@@ -166,8 +166,9 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             updateDebugLine(from: worldPosition)
         }
 
-        func makeDebugLine(length: Float = 0.1, color: UIColor = .cyan) -> ModelEntity {
-            let mesh = MeshResource.generateBox(size: [0.01, length, 0.01]) // altura no eixo Y
+        func makeDebugLine(length: Float = 0.15, color: UIColor = .cyan) -> ModelEntity {
+            let thickness: Float = 0.003
+            let mesh = MeshResource.generateBox(size: [thickness, length, thickness])
             let material = SimpleMaterial(color: color.withAlphaComponent(0.5), isMetallic: false)
             let line = ModelEntity(mesh: mesh, materials: [material])
             
