@@ -25,6 +25,11 @@ struct IlluminationTheoryView: View {
         ),
         IlluminationPage(
             title: "Exercício em RA",
+            imageName: "LightDownloadImage",
+            description: "Se não tiver a lanterna física, faça o download do modelo 3D abaixo e após imprimir marque as posições conforme o exemplo na imagem."
+        ),
+        IlluminationPage(
+            title: "Exercício em RA",
             imageName: "Light3Image",
             description: "Explore a interação com o ambiente em Realidade Aumentada apontando a lanterna 3D real para iluminar o cubo!"
         )
@@ -105,7 +110,22 @@ struct IlluminationTheoryView: View {
                                     .stroke(Color.grafikOutline, lineWidth: 3)
                             )
                             .padding(.horizontal, 40)
-                            .padding(.bottom, 20)
+//                            .padding(.bottom, 10)
+                    }
+                    
+//                    https://github.com/LDTTFURB/site/tree/main/Marcadores/Grafik
+                    
+                    if currentPage == 2 || currentPage == 3 {
+                        Button(action: {
+                            if let url = URL(string: "https://github.com/LDTTFURB/site/tree/main/Marcadores/Grafik") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Text("Baixar modelo 3D da lanterna")
+                                .font(.balooRegular(size: 14))
+                                .foregroundColor(.grafikBlue)
+                                .underline()
+                        }
                     }
                 }
             }

@@ -47,7 +47,6 @@ struct CameraARViewContainer: UIViewRepresentable {
         var parent: CameraARViewContainer
         weak var arView: ARView?
         var floatingPanel: FloatingPanelEntity?
-        
         var sceneContainer: Entity?
         private var cancellables = Set<AnyCancellable>()
         var cameraModel: CameraPositionModel?
@@ -56,6 +55,7 @@ struct CameraARViewContainer: UIViewRepresentable {
         var cameraIndicator: ModelEntity?
         var exerciseCompleted = false
         var alignmentTimer: Timer?
+        var validatedWords: Set<String> = []
         
         init(_ parent: CameraARViewContainer) {
             self.parent = parent
@@ -271,8 +271,6 @@ struct CameraARViewContainer: UIViewRepresentable {
             }
         }
         
-        var validatedWords: Set<String> = []
-
         func checkCameraAlignment() {
             guard let arView = arView,
                   let frame = arView.session.currentFrame,
@@ -280,13 +278,11 @@ struct CameraARViewContainer: UIViewRepresentable {
                   !exerciseCompleted else { return }
 
             let cameraTransform = frame.camera.transform
-
             let cameraForward = -SIMD3<Float>(
                 cameraTransform.columns.2.x,
                 cameraTransform.columns.2.y,
                 cameraTransform.columns.2.z
             )
-
             let modelNames = ["camera", "projecao", "reflexos"]
             let alignmentThreshold: Float = 0.97
 
@@ -294,22 +290,16 @@ struct CameraARViewContainer: UIViewRepresentable {
                 guard let container = anchor.children.first(where: { $0.name == name }) else {
                     continue
                 }
-
                 let containerTransform = container.transformMatrix(relativeTo: nil)
-
                 let containerZ = -SIMD3<Float>(
                     containerTransform.columns.2.x,
                     containerTransform.columns.2.y,
                     containerTransform.columns.2.z
                 )
-
                 let alignment = dot(cameraForward, containerZ)
-
                 let isAligned = alignment > alignmentThreshold
-
                 if isAligned && !validatedWords.contains(name) {
                     validatedWords.insert(name)
-
                     if let model = container.children.first(where: { $0 is ModelEntity }) as? ModelEntity {
                         model.model?.materials = [
                             SimpleMaterial(color: .cyan, isMetallic: false)
@@ -317,9 +307,7 @@ struct CameraARViewContainer: UIViewRepresentable {
                     }
                 }
             }
-
             let allAligned = validatedWords.count == modelNames.count
-
             if allAligned {
                 exerciseCompleted = true
                 showMessage("Todas as palavras foram encontradas!", duration: 3)

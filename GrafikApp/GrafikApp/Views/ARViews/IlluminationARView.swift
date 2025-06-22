@@ -117,24 +117,24 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             let position = targetAnchor.convert(position: worldPosition, from: nil)
             let targetPosition = targetAnchor.convert(position: worldTargetPosition, from: nil)
 
+            let direction = normalize(targetPosition - position)
+
             if let spotLightEntity = lightEntity {
                 spotLightEntity.position = position
-                let rotation = simd_quatf(from: [0, -1, 0], to: normalize(targetPosition - position))
+                let rotation = simd_quatf(from: [0, 0, -1], to: direction)
                 spotLightEntity.orientation = rotation
             }
 
             if let beam = beamEntity {
-                let direction = targetPosition - position
                 let length = simd_length(direction)
                 beam.position = (position + targetPosition) / 2
                 let up = SIMD3<Float>(0, 1, 0)
-                beam.orientation = simd_quatf(from: up, to: normalize(direction))
+                beam.orientation = simd_quatf(from: up, to: direction)
             }
             
             updateDebugLine(from: worldPosition)
         }
 
-        
         func handleObjectDetection(anchor: ARObjectAnchor) {
             guard let arView = arView else { return }
             guard let targetAnchor = parent.currentAnchor else {
@@ -171,7 +171,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             let material = SimpleMaterial(color: color.withAlphaComponent(0.5), isMetallic: false)
             let line = ModelEntity(mesh: mesh, materials: [material])
             
-            // Centraliza a linha na base do objeto (opcional)
             line.position.y += length / 2
 
             return line
@@ -199,7 +198,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             spotLightEntity.position = position
 
             let direction = normalize(target - position)
-            let rotation = simd_quatf(from: [0, -1, 0], to: direction) // SpotLight aponta para -Y
+            let rotation = simd_quatf(from: [0, -1, 0], to: direction) 
             spotLightEntity.orientation = rotation
 
             var spotLight = SpotLightComponent()
@@ -217,8 +216,6 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             anchor.addChild(beam)
 
             self.lightEntity = spotLightEntity
-
-            print("spotLight adicionada de \(position) para \(target)")
         }
         
         func createLightBeam(from start: SIMD3<Float>, to end: SIMD3<Float>) -> ModelEntity {
@@ -405,16 +402,12 @@ extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
             for anchor in anchors {
                 if let objectAnchor = anchor as? ARObjectAnchor {
-                    // Extrai a posição do anchor detectado
                     let transform = objectAnchor.transform
                     let position = SIMD3<Float>(
                         transform.columns.3.x,
                         transform.columns.3.y,
                         transform.columns.3.z
                     )
-                    
-                    print("✅ Lanterna detectada na posição: \(position)")
-
                     handleObjectDetection(anchor: objectAnchor)
                 } else if let planeAnchor = anchor as? ARPlaneAnchor, !parent.hasAddedAxes {
                     DispatchQueue.main.async {
@@ -437,10 +430,6 @@ extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
         for anchor in anchors {
             if let objectAnchor = anchor as? ARObjectAnchor {
                 if objectAnchor.identifier == objectAnchorId {
-                    print("❌ Perdeu o tracking da lanterna!")
-                    DispatchQueue.main.async {
-                        self.parent.message = "Perdeu o tracking da lanterna!"
-                    }
                     lightEntity?.removeFromParent()
                     beamEntity?.removeFromParent()
                     debugLineEntity?.removeFromParent()
