@@ -394,7 +394,6 @@ struct TransformationsARViewScreen: View {
         }
     }
 
-
     var body: some View {
         ZStack {
             TransformationsARView(

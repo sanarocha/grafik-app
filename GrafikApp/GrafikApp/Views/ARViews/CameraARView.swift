@@ -317,15 +317,28 @@ struct CameraARViewContainer: UIViewRepresentable {
                 generator.notificationOccurred(.success)
             }
         }
-        
+
         func showMessageInAR(_ text: String, _ color: SimpleMaterial.Color) {
             guard let anchor = parent.currentAnchor else {
                 print("🚫 Anchor não existe")
                 return
             }
 
+            let borderMesh = MeshResource.generatePlane(width: 0.42, height: 0.1, cornerRadius: 0.012)
+            let borderMaterial = SimpleMaterial(
+                color: .white,
+                roughness: 1,
+                isMetallic: false
+            )
+            let border = ModelEntity(mesh: borderMesh, materials: [borderMaterial])
+            border.position = [0, 0, 0.004]
+
             let backgroundMesh = MeshResource.generatePlane(width: 0.4, height: 0.08, cornerRadius: 0.01)
-            let backgroundMaterial = SimpleMaterial(color: .black.withAlphaComponent(0.75), isMetallic: false)
+            let backgroundMaterial = SimpleMaterial(
+                color: .black.withAlphaComponent(0.75),
+                roughness: 1,
+                isMetallic: false
+            )
             let background = ModelEntity(mesh: backgroundMesh, materials: [backgroundMaterial])
             background.position = [0, 0, 0.005]
 
@@ -342,9 +355,11 @@ struct CameraARViewContainer: UIViewRepresentable {
             textEntity.position = [-0.18, -0.05, 0.01]
 
             let container = Entity()
+            container.addChild(border)
             container.addChild(background)
             container.addChild(textEntity)
-            container.position = [0, 0.3, -0.2]
+
+            container.position = SIMD3<Float>(0, 0.3, -0.2)
 
             anchor.addChild(container)
 
