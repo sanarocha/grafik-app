@@ -5,7 +5,10 @@
   },
   "resources" : [
     {
-      "filename" : "Lampada3D.arobject"
+      "filename" : "Lanterna.arobject"
+    },
+    {
+      "filename" : "Lanterna2.arobject"
     }
   ]
 }

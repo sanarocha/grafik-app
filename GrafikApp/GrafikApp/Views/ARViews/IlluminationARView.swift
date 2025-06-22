@@ -53,6 +53,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
         private var cancellables = Set<AnyCancellable>()
         var objectAnchorId: UUID?
         var beamEntity: ModelEntity?
+        var debugLineEntity: ModelEntity?
         
         init(_ parent: IlluminationARViewContainer) {
             self.parent = parent
@@ -99,7 +100,7 @@ struct IlluminationARViewContainer: UIViewRepresentable {
             guard let targetAnchor = parent.currentAnchor else { return }
             
             let transform = anchor.transform
-            let position = SIMD3<Float>(
+            let worldPosition = SIMD3<Float>(
                 transform.columns.3.x,
                 transform.columns.3.y,
                 transform.columns.3.z
@@ -111,9 +112,11 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 transform.columns.2.z
             )
 
-            let targetPosition = position + forward * 0.3
+            let worldTargetPosition = worldPosition + forward * 0.3
 
-            // atualiza a luz existente
+            let position = targetAnchor.convert(position: worldPosition, from: nil)
+            let targetPosition = targetAnchor.convert(position: worldTargetPosition, from: nil)
+
             if let spotLightEntity = lightEntity {
                 spotLightEntity.position = position
                 let rotation = simd_quatf(from: [0, -1, 0], to: normalize(targetPosition - position))
@@ -127,7 +130,10 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 let up = SIMD3<Float>(0, 1, 0)
                 beam.orientation = simd_quatf(from: up, to: normalize(direction))
             }
+            
+            updateDebugLine(from: worldPosition)
         }
+
         
         func handleObjectDetection(anchor: ARObjectAnchor) {
             guard let arView = arView else { return }
@@ -135,31 +141,57 @@ struct IlluminationARViewContainer: UIViewRepresentable {
                 print("⚠️ Nenhum anchor do cubo presente ainda.")
                 return
             }
-            
+
             let transform = anchor.transform
-            
-            // posição do objeto detectado
-            let position = SIMD3<Float>(
+
+            let worldPosition = SIMD3<Float>(
                 transform.columns.3.x,
                 transform.columns.3.y,
                 transform.columns.3.z
             )
-            
-            // direção que o objeto está apontando (eixo Z negativo)
+
             let forward = -SIMD3<Float>(
                 transform.columns.2.x,
                 transform.columns.2.y,
                 transform.columns.2.z
             )
-            
-            // posição alvo (onde a luz deve mirar)
-            let targetPosition = position + forward * 0.3
+
+            let worldTargetPosition = worldPosition + forward * 0.3
             objectAnchorId = anchor.identifier
 
+            let position = targetAnchor.convert(position: worldPosition, from: nil)
+            let targetPosition = targetAnchor.convert(position: worldTargetPosition, from: nil)
+
             addSpotLight(from: position, to: targetPosition, in: targetAnchor)
-    
+            updateDebugLine(from: worldPosition)
+        }
+
+        func makeDebugLine(length: Float = 0.1, color: UIColor = .cyan) -> ModelEntity {
+            let mesh = MeshResource.generateBox(size: [0.01, length, 0.01]) // altura no eixo Y
+            let material = SimpleMaterial(color: color.withAlphaComponent(0.5), isMetallic: false)
+            let line = ModelEntity(mesh: mesh, materials: [material])
+            
+            // Centraliza a linha na base do objeto (opcional)
+            line.position.y += length / 2
+
+            return line
         }
         
+        func updateDebugLine(from worldPosition: SIMD3<Float>) {
+            guard let targetAnchor = parent.currentAnchor else { return }
+
+            let position = targetAnchor.convert(position: worldPosition, from: nil)
+
+            if let debugLine = debugLineEntity {
+                debugLine.position = position
+            } else {
+                let line = makeDebugLine(length: 0.15, color: .cyan)
+                line.position = position
+                targetAnchor.addChild(line)
+                debugLineEntity = line
+            }
+        }
+
         func addSpotLight(from position: SIMD3<Float>, to target: SIMD3<Float>, in anchor: AnchorEntity) {
             lightEntity?.removeFromParent()
             
@@ -371,22 +403,51 @@ struct IlluminationARViewScreen: View {
 
 extension IlluminationARViewContainer.Coordinator: ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-        for anchor in anchors {
-            if let objectAnchor = anchor as? ARObjectAnchor {
-                handleObjectDetection(anchor: objectAnchor)
-            } else if let planeAnchor = anchor as? ARPlaneAnchor, !parent.hasAddedAxes {
-                DispatchQueue.main.async {
-                    self.parent.message = "Plano detectado! Toque para adicionar os eixos."
+            for anchor in anchors {
+                if let objectAnchor = anchor as? ARObjectAnchor {
+                    // Extrai a posição do anchor detectado
+                    let transform = objectAnchor.transform
+                    let position = SIMD3<Float>(
+                        transform.columns.3.x,
+                        transform.columns.3.y,
+                        transform.columns.3.z
+                    )
+                    
+                    print("✅ Lanterna detectada na posição: \(position)")
+
+                    handleObjectDetection(anchor: objectAnchor)
+                } else if let planeAnchor = anchor as? ARPlaneAnchor, !parent.hasAddedAxes {
+                    DispatchQueue.main.async {
+                        self.parent.message = "Plano detectado! Toque para adicionar os eixos."
+                    }
                 }
             }
         }
-    }
+        
+        func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+            for anchor in anchors {
+                if let objectAnchor = anchor as? ARObjectAnchor {
+                    print("🔄 Atualizando posição da lanterna.")
+                    updateLightFromObject(anchor: objectAnchor)
+                }
+            }
+        }
     
-    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
         for anchor in anchors {
             if let objectAnchor = anchor as? ARObjectAnchor {
-                print("Lampada detectada!")
-                updateLightFromObject(anchor: objectAnchor)
+                if objectAnchor.identifier == objectAnchorId {
+                    print("❌ Perdeu o tracking da lanterna!")
+                    DispatchQueue.main.async {
+                        self.parent.message = "Perdeu o tracking da lanterna!"
+                    }
+                    lightEntity?.removeFromParent()
+                    beamEntity?.removeFromParent()
+                    debugLineEntity?.removeFromParent()
+                    lightEntity = nil
+                    beamEntity = nil
+                    debugLineEntity = nil
+                }
             }
         }
     }
